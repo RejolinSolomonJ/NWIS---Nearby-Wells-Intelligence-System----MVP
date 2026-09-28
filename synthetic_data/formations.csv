@@ -1,0 +1,74 @@
+formation_id,well_id,name,top_depth_m,base_depth_m,lithology
+87f0f2a0-bc6a-403b-af51-97006097d640,758a9b69-373a-400c-85ee-20ba4172ddf4,Alluvium / Dihing Formation,0.0,480.0,"Unconsolidated sands, gravels, clays"
+e6358200-0102-4138-84b5-345dca54cdcf,758a9b69-373a-400c-85ee-20ba4172ddf4,Tipam Sandstone Formation,480.0,2695.4,Medium to coarse grained sandstone
+8a6be6a0-17ff-4b4e-a037-65675b43abb0,758a9b69-373a-400c-85ee-20ba4172ddf4,Barail Coal-Shale Formation (F3),2695.4,2937.1,"Carbonaceous shale, coal seams, tight sandstone"
+e9121de7-eb5c-44dd-a33a-3f4b441242fc,758a9b69-373a-400c-85ee-20ba4172ddf4,Kopili Shale Formation,2937.1,3261.5,"Splintery dark grey shale, calcareous silt"
+a9029c40-c4e3-4fd4-b6be-8e897c13d66d,1c5c67a3-4018-4763-9fd8-d86b757283a0,Alluvium / Dihing Formation,0.0,381.4,"Unconsolidated sands, gravels, clays"
+31f00f8e-6be9-42eb-9b4e-bf24bfb9d41c,1c5c67a3-4018-4763-9fd8-d86b757283a0,Tipam Sandstone Formation,381.4,2717.1,Medium to coarse grained sandstone
+98472bd1-f989-4f14-9936-3981bfe84a71,1c5c67a3-4018-4763-9fd8-d86b757283a0,Barail Coal-Shale Formation (F3),2717.1,2949.6,"Carbonaceous shale, coal seams, tight sandstone"
+7e8acd81-0104-4ed1-8310-0ac2642e1a0c,1c5c67a3-4018-4763-9fd8-d86b757283a0,Kopili Shale Formation,2949.6,3341.0,"Splintery dark grey shale, calcareous silt"
+4deedbc7-f41d-4243-8a78-21fb3f6e964f,1c5c67a3-4018-4763-9fd8-d86b757283a0,Sylhet Limestone Formation,3341.0,3616.7,Hard fossiliferous limestone with vugs
+2ac93f18-ee80-488d-b490-8a03b708558f,45736872-7faf-4942-97c5-5cef81a54319,Alluvium / Dihing Formation,0.0,386.7,"Unconsolidated sands, gravels, clays"
+fbdee2ae-8bf4-4d4b-9fab-70650144176e,45736872-7faf-4942-97c5-5cef81a54319,Tipam Sandstone Formation,386.7,2687.1,Medium to coarse grained sandstone
+0b079934-5d9e-49e9-b640-397f1a490548,45736872-7faf-4942-97c5-5cef81a54319,Barail Coal-Shale Formation (F3),2687.1,2933.4,"Carbonaceous shale, coal seams, tight sandstone"
+f74b21ad-fcd1-483f-ab44-221cb69e2ff2,45736872-7faf-4942-97c5-5cef81a54319,Kopili Shale Formation,2933.4,3336.6,"Splintery dark grey shale, calcareous silt"
+71b24ac0-9c49-49a2-afd2-78aaa89b3242,45736872-7faf-4942-97c5-5cef81a54319,Sylhet Limestone Formation,3336.6,3574.2,Hard fossiliferous limestone with vugs
+8fffd770-6c05-4397-9041-6f3003846df1,45736872-7faf-4942-97c5-5cef81a54319,Basement Metamorphic Complex,3574.2,3574.2,Gneiss and quartzite basement
+bd121b6a-0ad4-4618-915e-022b071d6728,2bf4c40a-94ed-45dd-b722-d8bb02933dc1,Alluvium / Dihing Formation,0.0,384.4,"Unconsolidated sands, gravels, clays"
+052dbab6-0deb-4b96-8684-1fa964c2816e,2bf4c40a-94ed-45dd-b722-d8bb02933dc1,Tipam Sandstone Formation,384.4,2689.2,Medium to coarse grained sandstone
+75a82ba8-0538-4909-be86-baf11cc9db1d,2bf4c40a-94ed-45dd-b722-d8bb02933dc1,Barail Coal-Shale Formation (F3),2689.2,2902.6,"Carbonaceous shale, coal seams, tight sandstone"
+cb2daa3a-5b82-409e-bfc7-90fe19e23d0e,2bf4c40a-94ed-45dd-b722-d8bb02933dc1,Kopili Shale Formation,2902.6,3234.2,"Splintery dark grey shale, calcareous silt"
+5a3bffd0-09c6-48e0-b5be-de13a1ac9e7c,7b1a405c-5461-4c43-a3f6-90a0e8c1c070,Alluvium / Dihing Formation,0.0,481.5,"Unconsolidated sands, gravels, clays"
+0b3cf646-7444-4cf0-9fcc-67676ad22e47,7b1a405c-5461-4c43-a3f6-90a0e8c1c070,Tipam Sandstone Formation,481.5,2704.5,Medium to coarse grained sandstone
+f588def7-e4c1-43ff-9b72-a5f3942ccc1a,7b1a405c-5461-4c43-a3f6-90a0e8c1c070,Barail Coal-Shale Formation (F3),2704.5,2924.3,"Carbonaceous shale, coal seams, tight sandstone"
+1ddd14e9-19e5-40f6-bbd3-4e119b4bc45d,7b1a405c-5461-4c43-a3f6-90a0e8c1c070,Kopili Shale Formation,2924.3,3361.5,"Splintery dark grey shale, calcareous silt"
+8f5dbe65-c827-4a83-9f18-b7c7ad54358e,7b1a405c-5461-4c43-a3f6-90a0e8c1c070,Sylhet Limestone Formation,3361.5,3680.3,Hard fossiliferous limestone with vugs
+20a80bc2-00da-48f9-87dd-79f2b222d573,7b1a405c-5461-4c43-a3f6-90a0e8c1c070,Basement Metamorphic Complex,3680.3,3722.4,Gneiss and quartzite basement
+aaa2888c-ec16-486a-b709-795ae01302f4,afc60f98-fd9d-49f2-966d-6a30e1812a62,Alluvium / Dihing Formation,0.0,461.7,"Unconsolidated sands, gravels, clays"
+a979e6ba-a10e-40d4-a07f-a938c89fcf11,afc60f98-fd9d-49f2-966d-6a30e1812a62,Tipam Sandstone Formation,461.7,2708.6,Medium to coarse grained sandstone
+42e3659a-29dc-47a6-9205-07a281b68fc7,afc60f98-fd9d-49f2-966d-6a30e1812a62,Barail Coal-Shale Formation (F3),2708.6,2930.0,"Carbonaceous shale, coal seams, tight sandstone"
+d0eee4c7-0a5d-4379-b891-55819c819a44,afc60f98-fd9d-49f2-966d-6a30e1812a62,Kopili Shale Formation,2930.0,3317.5,"Splintery dark grey shale, calcareous silt"
+55acff29-047a-459f-a6e7-cd58ce79478b,de4799e0-ea6c-4fad-9660-9977bf159d4b,Alluvium / Dihing Formation,0.0,382.9,"Unconsolidated sands, gravels, clays"
+be6d6c77-8042-4095-86c7-3ba23cbf36af,de4799e0-ea6c-4fad-9660-9977bf159d4b,Tipam Sandstone Formation,382.9,2697.9,Medium to coarse grained sandstone
+9df2fadc-6fa6-4559-9f86-a962dcfc4f68,de4799e0-ea6c-4fad-9660-9977bf159d4b,Barail Coal-Shale Formation (F3),2697.9,2902.5,"Carbonaceous shale, coal seams, tight sandstone"
+1679c930-bed4-46ce-9c47-17dcb0ece0ec,de4799e0-ea6c-4fad-9660-9977bf159d4b,Kopili Shale Formation,2902.5,3209.6,"Splintery dark grey shale, calcareous silt"
+8b0de73a-2f62-4833-8855-a17e7712b900,de4799e0-ea6c-4fad-9660-9977bf159d4b,Sylhet Limestone Formation,3209.6,3476.0,Hard fossiliferous limestone with vugs
+bfec1e77-c74c-49d7-bcac-20fb355cbe72,0704034b-8301-426a-9f90-e3d19c2b31cb,Alluvium / Dihing Formation,0.0,374.0,"Unconsolidated sands, gravels, clays"
+69da46a4-9758-4445-b0d4-8dfb747ee01a,0704034b-8301-426a-9f90-e3d19c2b31cb,Tipam Sandstone Formation,374.0,2701.8,Medium to coarse grained sandstone
+6c4ec4b9-5dd0-4e7f-a350-a429a62e4b78,0704034b-8301-426a-9f90-e3d19c2b31cb,Barail Coal-Shale Formation (F3),2701.8,2921.1,"Carbonaceous shale, coal seams, tight sandstone"
+c61cb692-4a99-47e3-b457-d7b6e1120f87,0704034b-8301-426a-9f90-e3d19c2b31cb,Kopili Shale Formation,2921.1,3310.5,"Splintery dark grey shale, calcareous silt"
+e655beea-a268-4240-a340-10ed0085ba36,0704034b-8301-426a-9f90-e3d19c2b31cb,Sylhet Limestone Formation,3310.5,3401.1,Hard fossiliferous limestone with vugs
+94fb7cc5-c44c-4e84-994f-cc3644e7a48d,0704034b-8301-426a-9f90-e3d19c2b31cb,Basement Metamorphic Complex,3401.1,3401.1,Gneiss and quartzite basement
+dbc98e96-2058-46e4-a1b0-483589146b96,6880fa01-ac1d-499e-a3fb-52b3e2183956,Alluvium / Dihing Formation,0.0,479.1,"Unconsolidated sands, gravels, clays"
+cb39f9ca-18d1-4f32-8e2c-dc83a7781697,6880fa01-ac1d-499e-a3fb-52b3e2183956,Tipam Sandstone Formation,479.1,1282.5,Medium to coarse grained sandstone
+7875d5ee-055c-4f98-80bf-bde78f60ab3a,6880fa01-ac1d-499e-a3fb-52b3e2183956,Kopili Shale Formation,1282.5,1690.6,"Splintery dark grey shale, calcareous silt"
+63c08347-d1b2-4e74-9689-98ae76f25a81,6880fa01-ac1d-499e-a3fb-52b3e2183956,Sylhet Limestone Formation,1690.6,2042.9,Hard fossiliferous limestone with vugs
+705a14d2-bf2e-456b-baea-5fb0e4904353,6880fa01-ac1d-499e-a3fb-52b3e2183956,Basement Metamorphic Complex,2042.9,2323.4,Gneiss and quartzite basement
+68dd4e69-1261-473d-a214-efb2db05eb09,2f182721-34ab-4303-9700-ba031a29677c,Alluvium / Dihing Formation,0.0,465.3,"Unconsolidated sands, gravels, clays"
+a0477824-2bdc-4f59-8eec-0b5973afbce5,2f182721-34ab-4303-9700-ba031a29677c,Tipam Sandstone Formation,465.3,1367.4,Medium to coarse grained sandstone
+401c932e-c3f8-40f5-82fe-ce2321a103da,2f182721-34ab-4303-9700-ba031a29677c,Kopili Shale Formation,1367.4,1711.4,"Splintery dark grey shale, calcareous silt"
+02587f27-20a6-454f-8ac7-87018ed23d4f,2f182721-34ab-4303-9700-ba031a29677c,Sylhet Limestone Formation,1711.4,1985.1,Hard fossiliferous limestone with vugs
+69e1c5aa-0051-4912-8454-0b0187ee3517,2f182721-34ab-4303-9700-ba031a29677c,Basement Metamorphic Complex,1985.1,2185.6,Gneiss and quartzite basement
+4e3fc39e-0a6c-4ddc-9dc5-501996e38440,6fe2ee1e-277b-4293-b6a0-cb07c5bc473b,Alluvium / Dihing Formation,0.0,481.4,"Unconsolidated sands, gravels, clays"
+f5395827-2bb1-4b1e-98bb-0f18a429d927,6fe2ee1e-277b-4293-b6a0-cb07c5bc473b,Tipam Sandstone Formation,481.4,1360.4,Medium to coarse grained sandstone
+04a07d1d-2ba5-4ac7-9d16-e4d37a7f8ca3,6fe2ee1e-277b-4293-b6a0-cb07c5bc473b,Kopili Shale Formation,1360.4,1735.5,"Splintery dark grey shale, calcareous silt"
+78449d49-5369-4517-80a9-f734b849251b,6fe2ee1e-277b-4293-b6a0-cb07c5bc473b,Sylhet Limestone Formation,1735.5,2012.3,Hard fossiliferous limestone with vugs
+93b2d8cc-51ce-4c8c-8433-ee06760c7d5c,6fe2ee1e-277b-4293-b6a0-cb07c5bc473b,Basement Metamorphic Complex,2012.3,2349.2,Gneiss and quartzite basement
+5cfb2308-ae2f-454b-bf61-8886e1ab9a46,cfbea72d-2e23-4f82-8144-c06c35ecaaef,Alluvium / Dihing Formation,0.0,394.8,"Unconsolidated sands, gravels, clays"
+60797d38-08bc-44a8-9a87-004472b67143,cfbea72d-2e23-4f82-8144-c06c35ecaaef,Tipam Sandstone Formation,394.8,1386.5,Medium to coarse grained sandstone
+8887464a-a78e-4cca-8ea6-75b1560c3a42,cfbea72d-2e23-4f82-8144-c06c35ecaaef,Kopili Shale Formation,1386.5,1777.8,"Splintery dark grey shale, calcareous silt"
+508dd3c1-ea1f-416e-af23-cfc6b7417ce6,cfbea72d-2e23-4f82-8144-c06c35ecaaef,Sylhet Limestone Formation,1777.8,2050.7,Hard fossiliferous limestone with vugs
+eaa55451-b29e-479a-b473-24ff0c1a2d3c,cfbea72d-2e23-4f82-8144-c06c35ecaaef,Basement Metamorphic Complex,2050.7,2365.1,Gneiss and quartzite basement
+f80aa165-6f65-4235-ad7c-baed55d9c067,ab5422fe-62fc-48df-aefc-7887889e7bb2,Alluvium / Dihing Formation,0.0,493.0,"Unconsolidated sands, gravels, clays"
+9c4b5ede-8cc2-49f1-bf64-d47f95d865aa,ab5422fe-62fc-48df-aefc-7887889e7bb2,Tipam Sandstone Formation,493.0,1569.7,Medium to coarse grained sandstone
+8092fb01-0b59-470e-ad86-ac71eaed3879,ab5422fe-62fc-48df-aefc-7887889e7bb2,Kopili Shale Formation,1569.7,2007.5,"Splintery dark grey shale, calcareous silt"
+213d32d1-f4f6-4d1c-83bd-3e75fa9ca7e0,ab5422fe-62fc-48df-aefc-7887889e7bb2,Sylhet Limestone Formation,2007.5,2347.3,Hard fossiliferous limestone with vugs
+3a35e179-1980-4193-b8f1-5d33b41ed4c3,ab5422fe-62fc-48df-aefc-7887889e7bb2,Basement Metamorphic Complex,2347.3,2620.6,Gneiss and quartzite basement
+e244e7bd-2ecb-47b6-8bdf-01830ae26b5e,7b7c8687-b277-48fb-b936-9bbee641baaf,Alluvium / Dihing Formation,0.0,489.4,"Unconsolidated sands, gravels, clays"
+53743219-b2fe-4de2-b9f3-4ce8bfcabeca,7b7c8687-b277-48fb-b936-9bbee641baaf,Tipam Sandstone Formation,489.4,1553.0,Medium to coarse grained sandstone
+9269bb38-ade7-48fb-9437-cd46f0372a3f,7b7c8687-b277-48fb-b936-9bbee641baaf,Kopili Shale Formation,1553.0,1977.7,"Splintery dark grey shale, calcareous silt"
+dc7a5c52-cf66-44fd-ad30-6f36a114ddd8,7b7c8687-b277-48fb-b936-9bbee641baaf,Sylhet Limestone Formation,1977.7,2273.8,Hard fossiliferous limestone with vugs
+b2dccda0-c0e7-4797-9cc7-18d9cac8beef,260ad1cf-81c5-4cf3-a8bf-577c0e4a80b6,Alluvium / Dihing Formation,0.0,386.1,"Unconsolidated sands, gravels, clays"
+60394434-0fe9-41c3-a387-6ff3970a6d6d,260ad1cf-81c5-4cf3-a8bf-577c0e4a80b6,Tipam Sandstone Formation,386.1,1356.3,Medium to coarse grained sandstone
+0d3a5502-9ae9-40f0-ad1a-aedf7cdfadb5,260ad1cf-81c5-4cf3-a8bf-577c0e4a80b6,Kopili Shale Formation,1356.3,1668.1,"Splintery dark grey shale, calcareous silt"
+c8c6fbb5-fe8c-4a42-bec2-c2dc1f12c699,260ad1cf-81c5-4cf3-a8bf-577c0e4a80b6,Sylhet Limestone Formation,1668.1,2027.9,Hard fossiliferous limestone with vugs
