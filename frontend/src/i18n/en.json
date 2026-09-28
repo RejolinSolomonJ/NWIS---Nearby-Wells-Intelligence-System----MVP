@@ -1,0 +1,14 @@
+{
+  "app_name": "NWIS-X",
+  "tagline": "Nearby Wells Intelligence & Risk Explorer",
+  "simulated_data_label": "SIMULATED DATA",
+  "nav": {
+    "dashboard": "Dashboard",
+    "map": "Well Map",
+    "risk": "Risk Radar",
+    "compare": "Compare Wells",
+    "copilot": "AI Copilot",
+    "admin": "Admin Review",
+    "reports": "Reports"
+  }
+}

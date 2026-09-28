@@ -1,0 +1,3 @@
+# Docker Compose — NWIS-X
+# TODO: Implement in Phase 0
+# Will include: PostgreSQL 15 + PostGIS + pgvector, Backend (FastAPI), Frontend (Vite)

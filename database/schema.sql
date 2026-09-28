@@ -1,0 +1,3 @@
+-- NWIS-X Database Schema
+-- PostgreSQL 15 + PostGIS + pgvector
+-- TODO: Implement in Phase 0
