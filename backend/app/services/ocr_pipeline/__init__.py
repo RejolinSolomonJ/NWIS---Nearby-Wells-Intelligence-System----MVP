@@ -1,2 +1,3 @@
-# OCR Pipeline Service — PaddleOCR + pytesseract fallback
-# TODO: Implement in Phase 1
+from app.services.ocr_pipeline.ocr import OCRPipeline
+
+__all__ = ["OCRPipeline"]

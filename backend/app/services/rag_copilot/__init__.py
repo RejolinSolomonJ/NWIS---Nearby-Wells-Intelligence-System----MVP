@@ -1,2 +1,3 @@
-# RAG Copilot — LLM narration with citations
-# TODO: Implement in Phase 2
+from app.services.rag_copilot.service import rag_service, RAGCopilotService
+
+__all__ = ["rag_service", "RAGCopilotService"]

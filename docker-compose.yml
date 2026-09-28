@@ -1,3 +1,72 @@
-# Docker Compose — NWIS-X
-# TODO: Implement in Phase 0
-# Will include: PostgreSQL 15 + PostGIS + pgvector, Backend (FastAPI), Frontend (Vite)
+version: '3.8'
+
+services:
+  # ─── PostgreSQL 15 + PostGIS + pgvector ───
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: nwis-x-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nwis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nwis_secret_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-nwis_x}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nwis} -d ${POSTGRES_DB:-nwis_x}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── FastAPI Backend ───
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nwis-x-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-nwis}:${POSTGRES_PASSWORD:-nwis_secret_change_me}@db:5432/${POSTGRES_DB:-nwis_x}
+      - DATABASE_URL_SYNC=postgresql://${POSTGRES_USER:-nwis}:${POSTGRES_PASSWORD:-nwis_secret_change_me}@db:5432/${POSTGRES_DB:-nwis_x}
+      - SECRET_KEY=${SECRET_KEY:-change-me-to-a-random-secret-key}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+      - EMBEDDING_DIMENSION=${EMBEDDING_DIMENSION:-384}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - ./synthetic_data:/app/synthetic_data
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ─── React Frontend (Vite dev server) ───
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nwis-x-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:${BACKEND_PORT:-8000}/api/v1
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
+    driver: local

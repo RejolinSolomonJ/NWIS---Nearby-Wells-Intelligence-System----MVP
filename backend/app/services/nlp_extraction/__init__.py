@@ -1,2 +1,3 @@
-# NLP Extraction Service — spaCy + regex rules
-# TODO: Implement in Phase 1
+from app.services.nlp_extraction.extractor import NLPExtractor
+
+__all__ = ["NLPExtractor"]
