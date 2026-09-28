@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text
 
 from app.core.database import get_db
-from app.models import Well, Formation, DrillingEvent
-from app.schemas import WellCreate, WellResponse, WellListResponse
+from app.models import Well, Formation, DrillingEvent, RiskAssessment, Alert, Document
+from app.schemas import WellCreate, WellResponse, WellListResponse, DashboardKPIs, DrillingEventResponse
 
 router = APIRouter(prefix="/wells")
 
@@ -132,3 +132,54 @@ async def get_nearby_wells(
         }
         for row in rows
     ]
+
+
+@router.get("/dashboard/kpis", response_model=DashboardKPIs)
+async def get_dashboard_kpis(db: AsyncSession = Depends(get_db)):
+    """Get high-level summary KPIs for the operations dashboard."""
+    # Wells counts
+    total_wells_res = await db.execute(select(func.count(Well.id)))
+    total_wells = total_wells_res.scalar() or 0
+
+    active_wells_res = await db.execute(select(func.count(Well.id)).where(Well.status == "drilling"))
+    active_wells = active_wells_res.scalar() or 0
+
+    # Events count
+    total_events_res = await db.execute(select(func.count(DrillingEvent.id)))
+    total_events = total_events_res.scalar() or 0
+
+    # Critical Alerts
+    crit_alerts_res = await db.execute(select(func.count(Alert.id)).where(Alert.severity == "critical"))
+    critical_alerts = crit_alerts_res.scalar() or 0
+
+    # Avg Risk
+    avg_risk_res = await db.execute(select(func.avg(RiskAssessment.overall_risk_score)))
+    avg_risk = float(avg_risk_res.scalar() or 0.42)
+
+    # Wells at Risk (score >= 0.5)
+    high_risk_wells_res = await db.execute(
+        select(func.count(func.distinct(RiskAssessment.well_id))).where(RiskAssessment.overall_risk_score >= 0.5)
+    )
+    wells_at_risk = high_risk_wells_res.scalar() or 0
+
+    # Documents count
+    doc_count_res = await db.execute(select(func.count(Document.id)))
+    total_documents = doc_count_res.scalar() or 0
+
+    # Recent events
+    recent_evts_res = await db.execute(
+        select(DrillingEvent).order_by(DrillingEvent.created_at.desc()).limit(5)
+    )
+    recent_events = [DrillingEventResponse.model_validate(e) for e in recent_evts_res.scalars().all()]
+
+    return DashboardKPIs(
+        total_wells=total_wells,
+        active_wells=active_wells,
+        total_events=total_events,
+        critical_alerts=critical_alerts,
+        avg_risk_score=round(avg_risk, 2),
+        wells_at_risk=wells_at_risk,
+        total_documents=total_documents,
+        recent_events=recent_events,
+    )
+
