@@ -1,8 +1,6 @@
 -- ==============================================================================
--- NWIS-X: Nearby Wells Intelligence & Risk eXplorer
--- Database Schema (PostgreSQL 15 + PostGIS + pgvector)
--- SIH26121 — Oil India Ltd
--- SIMULATED DATA ONLY
+-- NWIS-X Database Schema (PostgreSQL 15 + PostGIS + pgvector)
+-- Phase 1 Exact Tables, Types, and Foreign Keys
 -- ==============================================================================
 
 -- Enable extensions
@@ -10,200 +8,143 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- 1. Users Table
+-- 1. users
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(100) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
     hashed_password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255),
-    role VARCHAR(50) DEFAULT 'viewer', -- admin, engineer, viewer
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    role VARCHAR(50)
 );
 
--- 2. Wells Table (with PostGIS Geometry)
+-- 2. wells
 CREATE TABLE IF NOT EXISTS wells (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    well_name VARCHAR(200) NOT NULL,
-    well_id_code VARCHAR(100) UNIQUE NOT NULL,
-    field_name VARCHAR(200) NOT NULL,
-    block_name VARCHAR(200),
-    operator VARCHAR(200) DEFAULT 'Oil India Ltd (Simulated)',
-    well_type VARCHAR(50), -- exploration, development, appraisal
-    status VARCHAR(50), -- drilling, completed, abandoned, suspended
-    spud_date TIMESTAMP WITH TIME ZONE,
-    completion_date TIMESTAMP WITH TIME ZONE,
-    total_depth_m FLOAT,
-    latitude FLOAT NOT NULL,
-    longitude FLOAT NOT NULL,
+    well_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
     geom geometry(Point, 4326),
-    elevation_m FLOAT,
-    kelly_bushing_m FLOAT,
-    metadata_json JSONB DEFAULT '{}'::jsonb,
-    is_simulated BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    spud_date TIMESTAMP,
+    total_depth_m FLOAT,
+    status VARCHAR(50)
 );
 
 CREATE INDEX IF NOT EXISTS idx_wells_geom ON wells USING GIST (geom);
-CREATE INDEX IF NOT EXISTS idx_wells_field ON wells (field_name);
-CREATE INDEX IF NOT EXISTS idx_wells_name ON wells (well_name);
 
--- 3. Formations Table
+-- 3. formations
 CREATE TABLE IF NOT EXISTS formations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    well_id UUID NOT NULL REFERENCES wells(id) ON DELETE CASCADE,
-    formation_name VARCHAR(200) NOT NULL,
-    top_depth_m FLOAT NOT NULL,
-    bottom_depth_m FLOAT NOT NULL,
-    lithology VARCHAR(200),
-    age VARCHAR(200),
-    porosity_pct FLOAT,
-    permeability_md FLOAT,
-    pressure_psi FLOAT,
-    temperature_c FLOAT,
-    fluid_type VARCHAR(100),
-    remarks TEXT,
-    is_simulated BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    formation_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    well_id UUID REFERENCES wells(well_id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    top_depth_m FLOAT,
+    base_depth_m FLOAT,
+    lithology TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_formations_well ON formations (well_id);
-CREATE INDEX IF NOT EXISTS idx_formations_depth ON formations (top_depth_m, bottom_depth_m);
-CREATE INDEX IF NOT EXISTS idx_formations_name ON formations (formation_name);
+CREATE INDEX IF NOT EXISTS idx_formations_well_id ON formations(well_id);
 
--- 4. Documents Table
-CREATE TABLE IF NOT EXISTS documents (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    well_id UUID REFERENCES wells(id) ON DELETE CASCADE,
-    title VARCHAR(500) NOT NULL,
-    doc_type VARCHAR(100), -- well_completion_report, mud_log, daily_drilling_report, geological_evaluation
-    file_path VARCHAR(1000),
-    file_hash VARCHAR(64),
-    page_count INTEGER,
-    ocr_status VARCHAR(50) DEFAULT 'completed',
-    extraction_status VARCHAR(50) DEFAULT 'completed',
-    metadata_json JSONB DEFAULT '{}'::jsonb,
-    is_simulated BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- 4. reports
+CREATE TABLE IF NOT EXISTS reports (
+    report_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    well_id UUID REFERENCES wells(well_id) ON DELETE CASCADE,
+    report_type VARCHAR(100),
+    file_path TEXT,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_documents_well ON documents (well_id);
-CREATE INDEX IF NOT EXISTS idx_documents_type ON documents (doc_type);
+CREATE INDEX IF NOT EXISTS idx_reports_well_id ON reports(well_id);
 
--- 5. Document Chunks (with pgvector 384-dimensional embeddings for all-MiniLM-L6-v2)
-CREATE TABLE IF NOT EXISTS document_chunks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    chunk_index INTEGER NOT NULL,
-    page_number INTEGER,
-    content TEXT NOT NULL,
-    embedding vector(384),
-    metadata_json JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- 5. report_chunks
+CREATE TABLE IF NOT EXISTS report_chunks (
+    chunk_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    report_id UUID REFERENCES reports(report_id) ON DELETE CASCADE,
+    page_number INT,
+    raw_text TEXT,
+    embedding vector(384)
 );
 
-CREATE INDEX IF NOT EXISTS idx_chunks_document ON document_chunks (document_id);
--- ivfflat index created after initial population or conditionally
+CREATE INDEX IF NOT EXISTS idx_report_chunks_report_id ON report_chunks(report_id);
 
--- 6. Drilling Events Table
+-- 6. mitigations
+CREATE TABLE IF NOT EXISTS mitigations (
+    mitigation_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    action_text TEXT,
+    outcome TEXT
+);
+
+-- 7. drilling_events
 CREATE TABLE IF NOT EXISTS drilling_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    well_id UUID NOT NULL REFERENCES wells(id) ON DELETE CASCADE,
-    event_type VARCHAR(100) NOT NULL, -- kick, lost_circulation, stuck_pipe, gas_show, wellbore_instability, mud_loss
-    severity VARCHAR(20) NOT NULL, -- low, medium, high, critical
-    depth_m FLOAT NOT NULL,
-    depth_end_m FLOAT,
-    formation_name VARCHAR(200),
-    event_date TIMESTAMP WITH TIME ZONE,
-    duration_hours FLOAT,
-    description TEXT NOT NULL,
-    root_cause TEXT,
-    action_taken TEXT,
-    mud_weight_ppg FLOAT,
-    mud_type VARCHAR(100),
-    npt_hours FLOAT,
-    cost_usd FLOAT,
-    source_document_id UUID REFERENCES documents(id) ON DELETE SET NULL,
-    source_page INTEGER,
-    metadata_json JSONB DEFAULT '{}'::jsonb,
-    is_simulated BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_events_well ON drilling_events (well_id);
-CREATE INDEX IF NOT EXISTS idx_events_type ON drilling_events (event_type);
-CREATE INDEX IF NOT EXISTS idx_events_severity ON drilling_events (severity);
-CREATE INDEX IF NOT EXISTS idx_events_depth ON drilling_events (depth_m);
-
--- 7. Risk Assessments Table (Deterministic Rule-Engine Output)
-CREATE TABLE IF NOT EXISTS risk_assessments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    well_id UUID NOT NULL REFERENCES wells(id) ON DELETE CASCADE,
-    assessment_type VARCHAR(100) NOT NULL, -- pre_drill, while_drilling, post_drill
-    overall_risk_score FLOAT NOT NULL,
-    confidence FLOAT NOT NULL,
+    event_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    well_id UUID REFERENCES wells(well_id) ON DELETE CASCADE,
+    formation_id UUID REFERENCES formations(formation_id) ON DELETE SET NULL,
     depth_m FLOAT,
-    formation_name VARCHAR(200),
-    geological_risk FLOAT DEFAULT 0.0,
-    mechanical_risk FLOAT DEFAULT 0.0,
-    pressure_risk FLOAT DEFAULT 0.0,
-    historical_risk FLOAT DEFAULT 0.0,
-    risk_factors JSONB DEFAULT '[]'::jsonb,
-    similar_well_ids JSONB DEFAULT '[]'::jsonb,
-    evidence_summary TEXT,
-    source_documents JSONB DEFAULT '[]'::jsonb,
-    is_simulated BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    event_type VARCHAR(50) CHECK (event_type IN ('mud_loss', 'kick', 'stuck_pipe', 'pressure_anomaly', 'torque_anomaly', 'other')),
+    severity VARCHAR(50),
+    description TEXT,
+    mitigation_id UUID REFERENCES mitigations(mitigation_id) ON DELETE SET NULL,
+    report_id UUID REFERENCES reports(report_id) ON DELETE SET NULL,
+    page_number INT
 );
 
-CREATE INDEX IF NOT EXISTS idx_risk_well ON risk_assessments (well_id);
-CREATE INDEX IF NOT EXISTS idx_risk_score ON risk_assessments (overall_risk_score);
+CREATE INDEX IF NOT EXISTS idx_drilling_events_well_id ON drilling_events(well_id);
+CREATE INDEX IF NOT EXISTS idx_drilling_events_formation_id ON drilling_events(formation_id);
+CREATE INDEX IF NOT EXISTS idx_drilling_events_event_type ON drilling_events(event_type);
 
--- 8. Alerts Table
-CREATE TABLE IF NOT EXISTS alerts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    well_id UUID NOT NULL REFERENCES wells(id) ON DELETE CASCADE,
-    alert_type VARCHAR(100) NOT NULL,
-    severity VARCHAR(20) NOT NULL, -- info, warning, critical
-    title VARCHAR(500) NOT NULL,
-    message TEXT NOT NULL,
-    why TEXT NOT NULL,
-    related_well_ids JSONB DEFAULT '[]'::jsonb,
+-- 8. drilling_parameters
+CREATE TABLE IF NOT EXISTS drilling_parameters (
+    param_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    well_id UUID REFERENCES wells(well_id) ON DELETE CASCADE,
     depth_m FLOAT,
-    formation_name VARCHAR(200),
-    evidence JSONB DEFAULT '[]'::jsonb,
-    source_document_id UUID REFERENCES documents(id) ON DELETE SET NULL,
-    source_page INTEGER,
-    similarity_score FLOAT,
-    confidence FLOAT,
-    is_read BOOLEAN DEFAULT FALSE,
-    is_acknowledged BOOLEAN DEFAULT FALSE,
-    acknowledged_by UUID REFERENCES users(id),
-    is_simulated BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    rop FLOAT,
+    rpm FLOAT,
+    torque FLOAT,
+    mud_weight FLOAT,
+    pressure FLOAT,
+    ts TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_alerts_well ON alerts (well_id);
-CREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts (severity);
-CREATE INDEX IF NOT EXISTS idx_alerts_read ON alerts (is_read);
+CREATE INDEX IF NOT EXISTS idx_drilling_params_well_id ON drilling_parameters(well_id);
 
--- 9. Copilot Conversations Table (Audit Log)
-CREATE TABLE IF NOT EXISTS copilot_conversations (
+-- 9. telemetry
+CREATE TABLE IF NOT EXISTS telemetry (
+    telemetry_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    well_id UUID REFERENCES wells(well_id) ON DELETE CASCADE,
+    depth_m FLOAT,
+    params JSONB,
+    ts TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_telemetry_well_id ON telemetry(well_id);
+
+-- 10. well_similarity
+CREATE TABLE IF NOT EXISTS well_similarity (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id),
-    well_id UUID REFERENCES wells(id) ON DELETE SET NULL,
-    query TEXT NOT NULL,
-    response TEXT NOT NULL,
-    citations JSONB DEFAULT '[]'::jsonb,
-    is_approved BOOLEAN,
-    reviewed_by UUID REFERENCES users(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    well_a UUID REFERENCES wells(well_id) ON DELETE CASCADE,
+    well_b UUID REFERENCES wells(well_id) ON DELETE CASCADE,
+    score FLOAT,
+    breakdown JSONB,
+    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_copilot_user ON copilot_conversations (user_id);
-CREATE INDEX IF NOT EXISTS idx_copilot_well ON copilot_conversations (well_id);
+CREATE INDEX IF NOT EXISTS idx_well_similarity_wells ON well_similarity(well_a, well_b);
+
+-- 11. risk_alerts
+CREATE TABLE IF NOT EXISTS risk_alerts (
+    alert_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    well_id UUID REFERENCES wells(well_id) ON DELETE CASCADE,
+    depth_m FLOAT,
+    risk_level VARCHAR(50),
+    evidence_ids JSONB,
+    confidence VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_risk_alerts_well_id ON risk_alerts(well_id);
+
+-- 12. audit_logs
+CREATE TABLE IF NOT EXISTS audit_logs (
+    log_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+    action VARCHAR(100),
+    entity VARCHAR(100),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
