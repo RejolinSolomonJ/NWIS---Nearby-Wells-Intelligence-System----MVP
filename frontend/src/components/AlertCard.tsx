@@ -27,7 +27,7 @@ export const AlertCard: React.FC<Props> = ({ alert, onAcknowledge }) => {
             {alert.severity}
           </span>
           <span className="text-xs font-mono text-slate-400">
-            {new Date(alert.created_at).toLocaleDateString()}
+            {new Date(alert.created_at || Date.now()).toLocaleDateString()}
           </span>
         </div>
 
@@ -84,10 +84,10 @@ export const AlertCard: React.FC<Props> = ({ alert, onAcknowledge }) => {
           <span className="font-mono text-cyan-400 font-bold uppercase text-[11px] block mb-0.5">
             📑 VERIFIED EVIDENCE:
           </span>
-          {alert.evidence && alert.evidence.length > 0 ? (
-            alert.evidence.map((ev, idx) => (
+          {Array.isArray(alert.evidence) && alert.evidence.length > 0 ? (
+            alert.evidence.map((ev: any, idx: number) => (
               <div key={idx} className="text-slate-300 text-xs mt-1">
-                • {ev.description}
+                • {typeof ev === 'string' ? ev : ev.description || JSON.stringify(ev)}
               </div>
             ))
           ) : (
@@ -112,7 +112,7 @@ export const AlertCard: React.FC<Props> = ({ alert, onAcknowledge }) => {
 
         {!alert.is_acknowledged && onAcknowledge && (
           <button
-            onClick={() => onAcknowledge(alert.id)}
+            onClick={() => onAcknowledge(alert.alert_id || alert.id || '')}
             className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono transition-all border border-slate-700"
           >
             ✓ Acknowledge Alert

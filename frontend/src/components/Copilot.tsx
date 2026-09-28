@@ -46,8 +46,8 @@ export const Copilot: React.FC<Props> = ({ wells, selectedWell, onSelectWell }) 
         ...newMessages,
         {
           role: 'assistant',
-          content: res.response,
-          citations: res.citations,
+          content: res.response || res.answer || 'No response returned.',
+          citations: res.citations || [],
           wellContext: res.well_context,
         },
       ]);

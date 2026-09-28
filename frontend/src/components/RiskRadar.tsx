@@ -57,7 +57,9 @@ export const RiskRadar: React.FC<Props> = ({ well, assessment, onSelectOffsetWel
           <div>
             <div className="text-[10px] uppercase font-mono text-slate-400">Algorithm Confidence</div>
             <div className="text-2xl font-bold font-mono text-cyan-300">
-              {(assessment.confidence * 100).toFixed(0)}%
+              {typeof assessment.confidence === 'number'
+                ? `${(assessment.confidence * 100).toFixed(0)}%`
+                : String(assessment.confidence || 'High')}
             </div>
           </div>
         </div>
@@ -150,7 +152,7 @@ export const RiskRadar: React.FC<Props> = ({ well, assessment, onSelectOffsetWel
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-sans">
-              {assessment.risk_factors.map((factor, idx) => (
+              {assessment.risk_factors.map((factor: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-800/40 transition-colors">
                   <td className="py-2.5 px-3 font-semibold text-slate-200 font-mono">{factor.factor}</td>
                   <td className="py-2.5 px-3">

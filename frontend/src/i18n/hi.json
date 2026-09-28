@@ -1,14 +1,18 @@
 {
   "app_name": "NWIS-X",
   "tagline": "निकटवर्ती कुआँ बुद्धिमत्ता और जोखिम एक्सप्लोरर",
-  "simulated_data_label": "सिम्युलेटेड डेटा",
+  "oil_india_banner": "SIH26121 — ऑयल इंडिया लिमिटेड गहराई-जागरूक संस्थागत स्मृति",
+  "simulated_data_disclaimer": "⚠️ सिम्युलेटेड डेटा — कोई स्वामित्व डेटा नहीं",
+  "status_connected": "जुड़ा हुआ (Connected)",
+  "status_connecting": "कनेक्ट हो रहा है...",
+  "status_offline": "ऑफ़लाइन मोड",
   "nav": {
-    "dashboard": "डैशबोर्ड",
-    "map": "कुआँ मानचित्र",
-    "risk": "जोखिम रडार",
-    "compare": "कुओं की तुलना",
-    "copilot": "AI सहायक",
-    "admin": "व्यवस्थापक समीक्षा",
-    "reports": "रिपोर्ट"
+    "dashboard": "डैशबोर्ड (Dashboard)",
+    "map": "मानचित्र (Map)",
+    "depth_radar": "गहराई रडार (Depth Radar)",
+    "institutional_memory": "संस्थागत स्मृति (Institutional Memory)",
+    "copilot": "सह-पायलट (Copilot)",
+    "compare": "कुओं की तुलना (Compare Wells)",
+    "admin": "व्यवस्थापक समीक्षा (Admin Review)"
   }
 }

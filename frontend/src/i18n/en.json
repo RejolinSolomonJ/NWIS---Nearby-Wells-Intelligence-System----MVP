@@ -1,14 +1,18 @@
 {
   "app_name": "NWIS-X",
-  "tagline": "Nearby Wells Intelligence & Risk Explorer",
-  "simulated_data_label": "SIMULATED DATA",
+  "tagline": "Nearby Wells Intelligence & Risk eXplorer",
+  "oil_india_banner": "SIH26121 — Oil India Ltd Depth-Aware Institutional Memory",
+  "simulated_data_disclaimer": "⚠️ SIMULATED DATA — NOT OIL INDIA PROPRIETARY DATA",
+  "status_connected": "Connected",
+  "status_connecting": "Connecting...",
+  "status_offline": "Offline Mode",
   "nav": {
     "dashboard": "Dashboard",
-    "map": "Well Map",
-    "risk": "Risk Radar",
+    "map": "Map",
+    "depth_radar": "Depth Radar",
+    "institutional_memory": "Institutional Memory",
+    "copilot": "Copilot",
     "compare": "Compare Wells",
-    "copilot": "AI Copilot",
-    "admin": "Admin Review",
-    "reports": "Reports"
+    "admin": "Admin Review"
   }
 }

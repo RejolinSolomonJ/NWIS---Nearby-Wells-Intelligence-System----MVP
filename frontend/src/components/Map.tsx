@@ -168,7 +168,7 @@ export const Map: React.FC<Props> = ({
                 } ${risk.border} ${isSelected ? 'ring-4 ring-cyan-400/80 scale-110' : ''}`}
               >
                 <span className="text-[10px] font-bold text-slate-950 font-mono">
-                  {well.well_id_code.split('-')[0].charAt(0)}
+                  {(well.well_id_code || well.code || well.name || 'W').split('-')[0].charAt(0)}
                 </span>
               </div>
 
@@ -178,7 +178,7 @@ export const Map: React.FC<Props> = ({
                   isSelected ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
               >
-                {well.well_id_code} ({(well.risk_score ? well.risk_score * 100 : 45).toFixed(0)}%)
+                {well.well_id_code || well.code || well.name} ({(well.risk_score ? well.risk_score * 100 : 45).toFixed(0)}%)
               </div>
             </div>
           );

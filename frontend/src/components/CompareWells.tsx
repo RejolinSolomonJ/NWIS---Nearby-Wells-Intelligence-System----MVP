@@ -112,23 +112,23 @@ export const CompareWells: React.FC<Props> = ({ wells, initialWellA, onClose }) 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs font-mono">
             <div className="p-2 rounded bg-slate-900 border border-slate-800">
               <div className="text-[10px] text-slate-400">Spatial</div>
-              <div className="text-slate-200 font-bold">{(similarity.spatial_score * 100).toFixed(0)}%</div>
+              <div className="text-slate-200 font-bold">{((similarity.spatial_score ?? 0) * 100).toFixed(0)}%</div>
             </div>
             <div className="p-2 rounded bg-slate-900 border border-slate-800">
               <div className="text-[10px] text-slate-400">Depth Profile</div>
-              <div className="text-slate-200 font-bold">{(similarity.depth_score * 100).toFixed(0)}%</div>
+              <div className="text-slate-200 font-bold">{((similarity.depth_score ?? 0) * 100).toFixed(0)}%</div>
             </div>
             <div className="p-2 rounded bg-slate-900 border border-slate-800">
               <div className="text-[10px] text-slate-400">Formations</div>
-              <div className="text-slate-200 font-bold">{(similarity.formation_score * 100).toFixed(0)}%</div>
+              <div className="text-slate-200 font-bold">{((similarity.formation_score ?? 0) * 100).toFixed(0)}%</div>
             </div>
             <div className="p-2 rounded bg-slate-900 border border-slate-800">
               <div className="text-[10px] text-slate-400">Incident Pattern</div>
-              <div className="text-slate-200 font-bold">{(similarity.event_score * 100).toFixed(0)}%</div>
+              <div className="text-slate-200 font-bold">{((similarity.event_score ?? 0) * 100).toFixed(0)}%</div>
             </div>
             <div className="p-2 rounded bg-slate-900 border border-slate-800">
               <div className="text-[10px] text-slate-400">Semantic / Field</div>
-              <div className="text-slate-200 font-bold">{(similarity.semantic_score * 100).toFixed(0)}%</div>
+              <div className="text-slate-200 font-bold">{((similarity.semantic_score ?? 0) * 100).toFixed(0)}%</div>
             </div>
           </div>
         </div>

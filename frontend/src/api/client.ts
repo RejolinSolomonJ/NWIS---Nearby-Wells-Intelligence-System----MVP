@@ -1,69 +1,166 @@
 /**
  * NWIS-X Typed API Client
- * Interacts with FastAPI backend with graceful local simulated fallbacks.
+ * Connects to FastAPI backend with graceful local simulated fallbacks.
  * NON-NEGOTIABLE: All data is labeled SIMULATED DATA.
  */
 
-const API_BASE = '/api/v1';
+// Allow configuring base URL or defaulting to relative root /api/v1
+const API_HOST = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = `${API_HOST}/api/v1`;
+
+export interface HealthStatus {
+  status: string;
+  version: string;
+  database: string;
+  timestamp: string;
+  simulated_data: boolean;
+}
+
+export interface DashboardKPIs {
+  total_wells: number;
+  active_wells: number;
+  critical_alerts: number;
+  avg_risk_score: number;
+  total_formations?: number;
+  total_events?: number;
+  wells_at_risk?: number;
+  recent_events?: DrillingEvent[] | any[];
+}
 
 export interface Well {
-  id: string;
-  well_name: string;
-  well_id_code: string;
-  field_name: string;
+  well_id: string;
+  id?: string;
+  name: string;
+  well_name?: string;
+  code?: string;
+  well_id_code?: string;
+  field_name?: string;
   block_name?: string;
-  operator: string;
-  well_type?: string;
-  status: string;
+  operator?: string;
+  status?: string;
   total_depth_m: number;
   latitude: number;
   longitude: number;
-  elevation_m?: number;
   spud_date?: string;
-  completion_date?: string;
-  is_simulated: boolean;
-  formation_count?: number;
-  event_count?: number;
+  distance_km?: number;
   risk_score?: number;
+  is_simulated?: boolean;
 }
 
 export interface Formation {
-  id: string;
+  formation_id: string;
+  id?: string;
   well_id: string;
-  formation_name: string;
+  name: string;
+  formation_name?: string;
   top_depth_m: number;
-  bottom_depth_m: number;
+  base_depth_m: number;
+  bottom_depth_m?: number;
   lithology?: string;
-  age?: string;
-  porosity_pct?: number;
-  permeability_md?: number;
   pressure_psi?: number;
-  temperature_c?: number;
-  fluid_type?: string;
-  remarks?: string;
-  is_simulated: boolean;
+  is_simulated?: boolean;
 }
 
 export interface DrillingEvent {
-  id: string;
+  event_id: string;
+  id?: string;
   well_id: string;
+  formation_id?: string;
   event_type: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: 'low' | 'medium' | 'high' | 'critical' | string;
   depth_m: number;
-  depth_end_m?: number;
-  formation_name?: string;
-  event_date?: string;
-  duration_hours?: number;
   description: string;
   root_cause?: string;
   action_taken?: string;
   mud_weight_ppg?: number;
-  mud_type?: string;
-  npt_hours?: number;
-  cost_usd?: number;
-  source_document_id?: string;
-  source_page?: number;
-  is_simulated: boolean;
+  report_id?: string;
+  page_number?: number;
+  needs_review?: boolean;
+  is_simulated?: boolean;
+}
+
+export interface SimilarityBreakdownComponent {
+  score: number;
+  weight: number;
+  weighted: number;
+  shared_formations?: string[];
+  common_events?: string[];
+  distance_km?: number;
+}
+
+export interface SimilarityBreakdown {
+  formation_overlap: SimilarityBreakdownComponent;
+  depth_proximity: SimilarityBreakdownComponent;
+  spatial_proximity: SimilarityBreakdownComponent;
+  operational_similarity: SimilarityBreakdownComponent;
+  event_type_overlap: SimilarityBreakdownComponent;
+}
+
+export interface WellSimilarity {
+  well_id: string;
+  target_well_id?: string;
+  well_name: string;
+  well_code?: string;
+  overall_similarity: number;
+  similarity_score?: number;
+  distance_km: number;
+  breakdown: SimilarityBreakdown;
+}
+
+export interface SimilarWell {
+  well_id: string;
+  well_name: string;
+  well_id_code?: string;
+  spatial_score?: number;
+  depth_score?: number;
+  formation_score?: number;
+  event_score?: number;
+  semantic_score?: number;
+  overall_similarity: number;
+  similarity_score?: number;
+  distance_km: number;
+  shared_formations?: string[];
+  common_events?: string[];
+}
+
+export interface NearbyVsRelevant {
+  target_well_id: string;
+  target_well_name: string;
+  closest_by_distance?: any;
+  most_relevant_by_similarity?: any;
+  nearby_wells: any[];
+  similar_wells: any[];
+  ordering_differs: boolean;
+  geological_insight?: string;
+  disclaimer: string;
+}
+
+export interface RiskEvidenceItem {
+  well: string;
+  distance: number;
+  event: string;
+  depth: number;
+  formation: string;
+  similarity: number;
+  source_doc?: string;
+  page?: number;
+  snippet?: string;
+  event_id?: string;
+}
+
+export interface CurrentRiskResponse {
+  well_id: string;
+  current_depth: number;
+  current_formation?: string;
+  lookahead_m: number;
+  risk_level: 'NORMAL' | 'WATCH' | 'CAUTION' | 'HIGH_EVIDENCE_RISK' | string;
+  risk_score: number;
+  confidence: 'Low' | 'Med' | 'High' | string;
+  evidence: RiskEvidenceItem[];
+  why_text: string;
+  evidence_ids: string[];
+  corroborating_wells_count: number;
+  disclaimer: string;
 }
 
 export interface RiskFactor {
@@ -74,370 +171,478 @@ export interface RiskFactor {
 }
 
 export interface RiskAssessment {
-  id: string;
+  id?: string;
   well_id: string;
-  assessment_type: string;
+  assessment_type?: string;
   overall_risk_score: number;
-  confidence: number;
+  confidence: number | string;
   depth_m?: number;
   formation_name?: string;
   geological_risk: number;
   mechanical_risk: number;
   pressure_risk: number;
   historical_risk: number;
-  risk_factors: RiskFactor[];
+  risk_factors: RiskFactor[] | any[];
   similar_well_ids: string[];
   evidence_summary?: string;
   source_documents: any[];
-  is_simulated: boolean;
+  is_simulated?: boolean;
 }
 
 export interface Alert {
-  id: string;
+  alert_id: string;
+  id?: string;
   well_id: string;
-  alert_type: string;
-  severity: 'info' | 'warning' | 'critical';
-  title: string;
-  message: string;
-  why: string;
-  related_well_ids: string[];
-  depth_m?: number;
+  depth_m: number;
   formation_name?: string;
-  evidence: Array<{
-    type: string;
-    description: string;
-    source_doc?: string;
-    page?: number;
-  }>;
-  source_document_id?: string;
+  alert_type: string;
+  severity: string;
+  title?: string;
+  message?: string;
+  why: string;
+  which_wells: string[];
+  related_well_ids?: string[];
+  evidence: string | any;
+  source_doc?: string;
   source_page?: number;
   similarity_score?: number;
+  confidence_score?: number;
   confidence?: number;
   is_read: boolean;
   is_acknowledged: boolean;
-  is_simulated: boolean;
-  created_at: string;
+  created_at?: string;
 }
 
-export interface SimilarWell {
-  well_id: string;
-  well_name: string;
-  well_id_code: string;
-  spatial_score: number;
-  depth_score: number;
-  formation_score: number;
-  event_score: number;
-  semantic_score: number;
-  overall_similarity: number;
-  distance_km: number;
-  shared_formations: string[];
-  common_events: string[];
+export interface CopilotCitation {
+  well: string;
+  doc: string;
+  page: number;
+  snippet: string;
 }
 
-export interface DashboardKPIs {
-  total_wells: number;
-  active_wells: number;
-  total_events: number;
-  critical_alerts: number;
-  avg_risk_score: number;
-  wells_at_risk: number;
-  total_documents: number;
-  recent_events: DrillingEvent[];
-}
-
-export interface Citation {
-  well_id?: string;
-  well_name?: string;
-  document_id?: string;
-  document_title?: string;
-  page?: number;
-  excerpt?: string;
-  relevance: number;
-}
-
-export interface CopilotResponse {
-  query: string;
-  response: string;
-  citations: Citation[];
-  well_context?: any;
+export interface CopilotQueryResponse {
+  answer: string;
+  citations: CopilotCitation[];
   disclaimer: string;
 }
 
-// ─── API Methods with Simulated Fallback ───
+export interface CopilotResponse {
+  query?: string;
+  question?: string;
+  response?: string;
+  answer: string;
+  citations: any[];
+  disclaimer?: string;
+  well_context?: any;
+}
 
-export async function fetchKPIs(): Promise<DashboardKPIs> {
+// ─── Phase 3: Core API ───
+
+export async function checkHealth(): Promise<HealthStatus> {
   try {
-    const res = await fetch(`${API_BASE}/wells/dashboard/kpis`);
+    const res = await fetch(`${API_HOST}/health`);
     if (res.ok) return await res.json();
   } catch (e) {
-    console.warn('Backend unavailable, using simulated KPIs', e);
+    try {
+      const res2 = await fetch(`/health`);
+      if (res2.ok) return await res2.json();
+    } catch {}
   }
   return {
-    total_wells: 55,
-    active_wells: 7,
-    total_events: 237,
-    critical_alerts: 14,
-    avg_risk_score: 0.44,
-    wells_at_risk: 18,
-    total_documents: 55,
-    recent_events: [
-      {
-        id: 'mock-1',
-        well_id: 'w-1',
-        event_type: 'kick',
-        severity: 'critical',
-        depth_m: 2940.5,
-        formation_name: 'Barail Coal-Shale',
-        description: 'Gas influx with 28 bbl pit volume gain; SIDPP 420 psi.',
-        root_cause: 'Encountered high-pressure lens requiring mud density increase.',
-        action_taken: 'Shut in on annular BOP, circulated out kick via wait and weight.',
-        mud_weight_ppg: 11.4,
-        is_simulated: true,
-      },
-      {
-        id: 'mock-2',
-        well_id: 'w-2',
-        event_type: 'lost_circulation',
-        severity: 'high',
-        depth_m: 2480.0,
-        formation_name: 'Tipam Sandstone',
-        description: 'Dynamic mud losses reached 95 bbl/hr in porous fractured interval.',
-        root_cause: 'Exceeded fracture gradient of depleted sand body.',
-        action_taken: 'Spotted coarse fiber and mica LCM pill.',
-        mud_weight_ppg: 10.2,
-        is_simulated: true,
-      },
-    ],
+    status: 'healthy',
+    version: '1.0.0',
+    database: 'simulated',
+    timestamp: new Date().toISOString(),
+    simulated_data: true,
   };
 }
 
-export async function fetchWells(page = 1, pageSize = 50, field?: string, search?: string): Promise<{ wells: Well[]; total: number }> {
+export async function getWells(): Promise<Well[]> {
   try {
-    let url = `${API_BASE}/wells?page=${page}&page_size=${pageSize}`;
-    if (field) url += `&field_name=${encodeURIComponent(field)}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    const res = await fetch(url);
-    if (res.ok) return await res.json();
+    const res = await fetch(`${API_BASE}/wells`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.map((w: any) => ({
+        ...w,
+        id: w.well_id,
+        well_name: w.name,
+        code: w.code || w.name?.split(' ').pop() || 'WELL',
+        well_id_code: w.code || w.name?.split(' ').pop() || 'WELL',
+        field_name: w.field_name || 'Nahorkatiya',
+        block_name: w.block_name || 'Assam Shelf',
+        operator: w.operator || 'Oil India Ltd (Simulated)',
+      }));
+    }
   } catch (e) {
-    console.warn('Backend unavailable, using fallback wells');
+    console.warn('Backend unavailable, using simulated wells');
   }
 
-  // Realistic fallback wells across Assam fields
-  const mockWells: Well[] = [
-    { id: 'w-nhk-101', well_name: 'Nahorkatiya Well NHK-101', well_id_code: 'NHK-101', field_name: 'Nahorkatiya', block_name: 'Block NHK-A', operator: 'Oil India Ltd (Simulated)', status: 'drilling', total_depth_m: 3850, latitude: 27.284, longitude: 95.342, is_simulated: true, risk_score: 0.68 },
-    { id: 'w-nhk-102', well_name: 'Nahorkatiya Well NHK-102', well_id_code: 'NHK-102', field_name: 'Nahorkatiya', block_name: 'Block NHK-A', operator: 'Oil India Ltd (Simulated)', status: 'completed', total_depth_m: 3620, latitude: 27.291, longitude: 95.351, is_simulated: true, risk_score: 0.35 },
-    { id: 'w-mrn-103', well_name: 'Moran Well MRN-103', well_id_code: 'MRN-103', field_name: 'Moran', block_name: 'Block MRN-B', operator: 'Oil India Ltd (Simulated)', status: 'drilling', total_depth_m: 4120, latitude: 27.185, longitude: 94.925, is_simulated: true, risk_score: 0.72 },
-    { id: 'w-mrn-104', well_name: 'Moran Well MRN-104', well_id_code: 'MRN-104', field_name: 'Moran', block_name: 'Block MRN-B', operator: 'Oil India Ltd (Simulated)', status: 'completed', total_depth_m: 3950, latitude: 27.178, longitude: 94.938, is_simulated: true, risk_score: 0.42 },
-    { id: 'w-dgb-105', well_name: 'Digboi Well DGB-105', well_id_code: 'DGB-105', field_name: 'Digboi', block_name: 'Block DGB-C', operator: 'Oil India Ltd (Simulated)', status: 'completed', total_depth_m: 2980, latitude: 27.382, longitude: 95.631, is_simulated: true, risk_score: 0.28 },
-    { id: 'w-bgj-106', well_name: 'Baghjan Well BGJ-106', well_id_code: 'BGJ-106', field_name: 'Baghjan', block_name: 'Block BGJ-A', operator: 'Oil India Ltd (Simulated)', status: 'drilling', total_depth_m: 4350, latitude: 27.592, longitude: 95.378, is_simulated: true, risk_score: 0.79 },
-    { id: 'w-brk-107', well_name: 'Barekuri Well BRK-107', well_id_code: 'BRK-107', field_name: 'Barekuri', block_name: 'Block BRK-B', operator: 'Oil India Ltd (Simulated)', status: 'completed', total_depth_m: 3820, latitude: 27.524, longitude: 95.421, is_simulated: true, risk_score: 0.51 },
-    { id: 'w-jrt-108', well_name: 'Jorhat Well JRT-108', well_id_code: 'JRT-108', field_name: 'Jorhat', block_name: 'Block JRT-A', operator: 'Oil India Ltd (Simulated)', status: 'completed', total_depth_m: 3410, latitude: 26.752, longitude: 94.225, is_simulated: true, risk_score: 0.31 },
+  // Robust simulated fallback
+  return [
+    {
+      well_id: '758a9b69-373a-400c-85ee-20ba4172ddf4',
+      id: '758a9b69-373a-400c-85ee-20ba4172ddf4',
+      name: 'Nahorkatiya Exploration DEMO-WELL-101',
+      well_name: 'Nahorkatiya Exploration DEMO-WELL-101',
+      code: 'DEMO-WELL-101',
+      well_id_code: 'DEMO-WELL-101',
+      field_name: 'Nahorkatiya',
+      block_name: 'Assam Shelf Block-1',
+      operator: 'Oil India Ltd (Simulated)',
+      total_depth_m: 3500.0,
+      latitude: 27.2842,
+      longitude: 95.3411,
+      status: 'active',
+      risk_score: 84,
+      is_simulated: true,
+    },
+    {
+      well_id: '1c5c67a3-4018-4763-9fd8-d86b757283a0',
+      id: '1c5c67a3-4018-4763-9fd8-d86b757283a0',
+      name: 'Nahorkatiya Exploration DEMO-WELL-102',
+      well_name: 'Nahorkatiya Exploration DEMO-WELL-102',
+      code: 'DEMO-WELL-102',
+      well_id_code: 'DEMO-WELL-102',
+      field_name: 'Nahorkatiya',
+      block_name: 'Assam Shelf Block-1',
+      operator: 'Oil India Ltd (Simulated)',
+      total_depth_m: 3600.0,
+      latitude: 27.3821,
+      longitude: 95.3124,
+      status: 'completed',
+      risk_score: 72,
+      is_simulated: true,
+    },
+    {
+      well_id: '45736872-7faf-4942-97c5-5cef81a54319',
+      id: '45736872-7faf-4942-97c5-5cef81a54319',
+      name: 'Nahorkatiya Exploration DEMO-WELL-103',
+      well_name: 'Nahorkatiya Exploration DEMO-WELL-103',
+      code: 'DEMO-WELL-103',
+      well_id_code: 'DEMO-WELL-103',
+      field_name: 'Nahorkatiya',
+      block_name: 'Assam Shelf Block-1',
+      operator: 'Oil India Ltd (Simulated)',
+      total_depth_m: 3550.0,
+      latitude: 27.2915,
+      longitude: 95.3582,
+      status: 'active',
+      risk_score: 78,
+      is_simulated: true,
+    },
   ];
-  return { wells: mockWells, total: mockWells.length };
 }
 
-export async function fetchRiskAssessment(wellId: string, depthM?: number): Promise<RiskAssessment> {
-  try {
-    let url = `${API_BASE}/risk/assess/${wellId}`;
-    if (depthM) url += `?depth_m=${depthM}`;
-    const res = await fetch(url);
-    if (res.ok) return await res.json();
-  } catch (e) {
-    console.warn('Backend unavailable, using simulated risk assessment');
-  }
+export async function fetchWells(page = 1, pageSize = 50): Promise<{ wells: Well[]; total: number }> {
+  const wells = await getWells();
+  return { wells, total: wells.length };
+}
 
+export async function getWell(id: string): Promise<Well | null> {
+  try {
+    const res = await fetch(`${API_BASE}/wells/${id}`);
+    if (res.ok) {
+      const w = await res.json();
+      return {
+        ...w,
+        id: w.well_id,
+        well_name: w.name,
+        code: w.name?.split(' ').pop() || 'WELL',
+        well_id_code: w.name?.split(' ').pop() || 'WELL',
+        field_name: w.field_name || 'Nahorkatiya',
+        block_name: w.block_name || 'Assam Shelf',
+        operator: w.operator || 'Oil India Ltd (Simulated)',
+      };
+    }
+  } catch (e) {}
+  const wells = await getWells();
+  return wells.find((w) => w.well_id === id || w.id === id) || wells[0];
+}
+
+export async function getNearbyWells(lat: number, lon: number, radiusKm = 15): Promise<Well[]> {
+  try {
+    const res = await fetch(`${API_BASE}/wells/nearby?lat=${lat}&lon=${lon}&radius_km=${radiusKm}`);
+    if (res.ok) return await res.json();
+  } catch (e) {}
+  return getWells();
+}
+
+export async function getFormations(wellId: string): Promise<Formation[]> {
+  try {
+    const res = await fetch(`${API_BASE}/formations/${wellId}`);
+    if (res.ok) return await res.json();
+  } catch (e) {}
+  return [
+    { formation_id: 'f1', well_id: wellId, name: 'Alluvium / Dihing Formation', top_depth_m: 0, base_depth_m: 400, lithology: 'Clay & Sandstone' },
+    { formation_id: 'f2', well_id: wellId, name: 'Tipam Sandstone Formation', top_depth_m: 400, base_depth_m: 2690, lithology: 'Coarse Sandstone' },
+    { formation_id: 'f3', well_id: wellId, name: 'Barail Coal-Shale Formation (F3)', top_depth_m: 2690, base_depth_m: 2940, lithology: 'Fractured Coal, Shale' },
+    { formation_id: 'f4', well_id: wellId, name: 'Kopili Shale Formation', top_depth_m: 2940, base_depth_m: 3300, lithology: 'Reactive Marine Shale' },
+  ];
+}
+
+export async function getEvents(params: Record<string, any> = {}): Promise<DrillingEvent[]> {
+  const query = new URLSearchParams(params).toString();
+  try {
+    const res = await fetch(`${API_BASE}/events${query ? '?' + query : ''}`);
+    if (res.ok) return await res.json();
+  } catch (e) {}
+  return [];
+}
+
+export async function fetchKPIs(): Promise<DashboardKPIs> {
+  const wells = await getWells();
+  const alerts = await getAlerts();
+  const events = await getEvents();
   return {
-    id: `risk-${wellId}`,
+    total_wells: wells.length,
+    active_wells: wells.filter((w) => w.status === 'active').length,
+    critical_alerts: alerts.filter((a) => a.severity === 'critical').length,
+    wells_at_risk: alerts.length,
+    avg_risk_score: 72.4,
+    recent_events: events.slice(0, 10),
+  };
+}
+
+// ─── Phase 5: Similarity Engine ───
+
+export async function getSimilarWells(wellId: string, limit = 10): Promise<WellSimilarity[]> {
+  try {
+    const res = await fetch(`${API_BASE}/wells/${wellId}/similar?limit=${limit}`);
+    if (res.ok) return await res.json();
+  } catch (e) {}
+  return [];
+}
+
+export async function findSimilarWells(wellId: string, limit = 5): Promise<SimilarWell[]> {
+  const list = await getSimilarWells(wellId, limit);
+  if (list && list.length > 0) {
+    return list.map((s) => ({
+      well_id: s.well_id,
+      well_name: s.well_name,
+      well_id_code: s.well_code || 'WELL',
+      overall_similarity: s.overall_similarity,
+      similarity_score: s.similarity_score || s.overall_similarity,
+      distance_km: s.distance_km,
+      shared_formations: s.breakdown?.formation_overlap?.shared_formations || [],
+      common_events: s.breakdown?.event_type_overlap?.common_events || [],
+    }));
+  }
+  return [
+    {
+      well_id: '1c5c67a3-4018-4763-9fd8-d86b757283a0',
+      well_name: 'Nahorkatiya Exploration DEMO-WELL-102',
+      well_id_code: 'DEMO-WELL-102',
+      overall_similarity: 0.72,
+      distance_km: 11.53,
+      shared_formations: ['Barail Coal-Shale Formation (F3)', 'Tipam Sandstone Formation'],
+      common_events: ['stuck_pipe'],
+    },
+    {
+      well_id: '45736872-7faf-4942-97c5-5cef81a54319',
+      well_name: 'Nahorkatiya Exploration DEMO-WELL-103',
+      well_id_code: 'DEMO-WELL-103',
+      overall_similarity: 0.68,
+      distance_km: 1.93,
+      shared_formations: ['Barail Coal-Shale Formation (F3)', 'Tipam Sandstone Formation'],
+      common_events: ['mud_loss'],
+    },
+  ];
+}
+
+export async function getNearbyVsRelevant(wellId: string, radiusKm = 25): Promise<NearbyVsRelevant | null> {
+  try {
+    const res = await fetch(`${API_BASE}/wells/${wellId}/nearby-vs-relevant?radius_km=${radiusKm}`);
+    if (res.ok) return await res.json();
+  } catch (e) {}
+  return null;
+}
+
+// ─── Phase 6: Depth-Aware Risk Engine ───
+
+export async function getCurrentRisk(
+  wellId: string,
+  depth: number,
+  currentFormation?: string,
+  lookaheadM = 50
+): Promise<CurrentRiskResponse> {
+  const params = new URLSearchParams({
     well_id: wellId,
-    assessment_type: 'while_drilling',
-    overall_risk_score: 0.68,
-    confidence: 0.88,
-    depth_m: depthM || 2950,
-    formation_name: 'Barail Coal-Shale',
-    geological_risk: 0.65,
-    mechanical_risk: 0.52,
-    pressure_risk: 0.78,
-    historical_risk: 0.72,
-    risk_factors: [
+    depth: depth.toString(),
+    lookahead_m: lookaheadM.toString(),
+  });
+  if (currentFormation) params.append('current_formation', currentFormation);
+
+  try {
+    const res = await fetch(`${API_BASE}/risk/current?${params.toString()}`);
+    if (res.ok) return await res.json();
+  } catch (e) {}
+
+  const isClusterZone = depth >= 2735 && depth <= 2780;
+  return {
+    well_id: wellId,
+    current_depth: depth,
+    current_formation: 'Barail Coal-Shale Formation (F3)',
+    lookahead_m: lookaheadM,
+    risk_level: isClusterZone ? 'HIGH_EVIDENCE_RISK' : (depth >= 2700 ? 'CAUTION' : 'NORMAL'),
+    risk_score: isClusterZone ? 91.5 : (depth >= 2700 ? 84.0 : 15.0),
+    confidence: isClusterZone ? 'High' : (depth >= 2700 ? 'Med' : 'Low'),
+    evidence: [
       {
-        factor: 'Abnormal Pore Pressure Gradient',
-        score: 0.78,
-        evidence: '2 kicks recorded in offset wells NHK-101 and NHK-102 at 2850m-3100m.',
-        source: 'NHK-101 Geological End of Well Report p. 14',
+        well: 'DEMO-WELL-102',
+        distance: 11.53,
+        event: 'stuck_pipe',
+        depth: 2761.8,
+        formation: 'Barail Coal-Shale Formation (F3)',
+        similarity: 0.62,
+        source_doc: 'Daily Drilling Report — DEMO-WELL-102',
+        page: 3,
+        snippet: 'CORRELATED CLUSTER INCIDENT: Differential stuck pipe in Barail Coal-Shale (F3) at 2761.8m.',
       },
       {
-        factor: 'Reactive Smectite Shale Hydration',
-        score: 0.65,
-        evidence: 'Severe sloughing and tight hole reaming documented during bit trips.',
-        source: 'Drillers Daily Log Book p. 9',
-      },
-      {
-        factor: 'Differential Sticking Risk in Tipam',
-        score: 0.52,
-        evidence: 'Thick filter cake with >1100 psi overbalance on permeable sand.',
-        source: 'Mud Logging Engineering Analysis p. 22',
-      },
-      {
-        factor: 'Offset High Severity Incidents',
-        score: 0.72,
-        evidence: '3 critical events logged within 4.2 km radius.',
-        source: 'Nearby Wells Intelligence Archive',
+        well: 'DEMO-WELL-103',
+        distance: 1.93,
+        event: 'mud_loss',
+        depth: 2758.2,
+        formation: 'Barail Coal-Shale Formation (F3)',
+        similarity: 0.68,
+        source_doc: 'Daily Drilling Report — DEMO-WELL-103',
+        page: 3,
+        snippet: 'CORRELATED CLUSTER INCIDENT: Sudden mud loss of 95 bbl/hr in Barail Coal-Shale (F3) at 2758.2m.',
       },
     ],
-    similar_well_ids: ['w-nhk-102', 'w-bgj-106'],
-    evidence_summary: 'Deterministic rule engine identifies acute kick danger in Barail Coal-Shale interval between 2800m and 3200m. Pressure risk dominates overall profile.',
-    source_documents: [{ doc_id: 'doc-1', page: 14, excerpt: 'Kick event requiring 1.2 ppg kill weight increase.' }],
+    why_text: isClusterZone
+      ? 'HIGH_EVIDENCE_RISK: 2 independent offset wells (DEMO-WELL-102, DEMO-WELL-103) corroborate severe mud loss and stuck pipe within tight ±10m band in Barail Coal-Shale Formation (F3).'
+      : 'Nominal baseline risk.',
+    evidence_ids: [],
+    corroborating_wells_count: 2,
+    disclaimer: '⚠️ SIMULATED DATA — NOT OIL INDIA DATA',
+  };
+}
+
+export async function getRiskAssessment(wellId: string, depthM?: number): Promise<RiskAssessment> {
+  try {
+    const url = `${API_BASE}/risk/assess/${wellId}${depthM ? `?depth_m=${depthM}` : ''}`;
+    const res = await fetch(url);
+    if (res.ok) return await res.json();
+  } catch (e) {}
+
+  return {
+    well_id: wellId,
+    overall_risk_score: 0.78,
+    confidence: 0.92,
+    depth_m: depthM || 2750.0,
+    formation_name: 'Barail Coal-Shale Formation (F3)',
+    geological_risk: 0.65,
+    mechanical_risk: 0.58,
+    pressure_risk: 0.72,
+    historical_risk: 0.84,
+    risk_factors: [
+      { factor: 'Pore Pressure Transition', score: 0.72, evidence: 'Offset kick logged at 2758m', source: 'Well 103 Report p. 3' },
+      { factor: 'Borehole Differential Sticking', score: 0.58, evidence: 'Overpull of 140 klbs in Well 102', source: 'Well 102 Report p. 3' },
+    ],
+    similar_well_ids: ['DEMO-WELL-102', 'DEMO-WELL-103'],
+    evidence_summary: 'Correlated microfracture interval in Barail Coal-Shale Formation (F3).',
+    source_documents: [],
     is_simulated: true,
   };
 }
 
-export async function fetchAlerts(severity?: string): Promise<Alert[]> {
+export async function fetchRiskAssessment(wellId: string): Promise<RiskAssessment> {
+  return await getRiskAssessment(wellId);
+}
+
+export async function getAlerts(params: Record<string, any> = {}): Promise<Alert[]> {
+  const query = new URLSearchParams(params).toString();
   try {
-    let url = `${API_BASE}/risk/alerts`;
-    if (severity) url += `?severity=${severity}`;
-    const res = await fetch(url);
-    if (res.ok) return await res.json();
-  } catch (e) {
-    console.warn('Backend unavailable, using simulated alerts');
-  }
+    const res = await fetch(`${API_BASE}/risk/alerts${query ? '?' + query : ''}`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.map((a: any) => ({
+        ...a,
+        id: a.alert_id,
+        title: a.title || `${a.alert_type?.replace('_', ' ').toUpperCase()} WARNING`,
+        message: a.why || a.evidence,
+        related_well_ids: a.which_wells || [],
+        confidence: a.confidence_score || 0.9,
+      }));
+    }
+  } catch (e) {}
 
   return [
     {
-      id: 'alert-1',
-      well_id: 'w-nhk-101',
-      alert_type: 'risk_threshold',
+      alert_id: 'alert-cluster-101',
+      id: 'alert-cluster-101',
+      well_id: '758a9b69-373a-400c-85ee-20ba4172ddf4',
+      depth_m: 2752.4,
+      formation_name: 'Barail Coal-Shale Formation (F3)',
+      alert_type: 'mud_loss',
       severity: 'critical',
-      title: 'EARLY WARNING: High Kick Vulnerability in Barail Coal-Shale',
-      message: 'Pore pressure influx projected at 2850m - 3100m. Offset wells experienced sudden gas influx.',
-      why: 'Offset well NHK-102 encountered 420 psi SIDPP kick at 2940m in identical carbonaceous facies.',
-      related_well_ids: ['NHK-102', 'NHK-105'],
-      depth_m: 2940,
-      formation_name: 'Barail Coal-Shale',
-      evidence: [
-        {
-          type: 'offset_drilling_incident',
-          description: 'Gas influx with 28 bbl pit gain requiring shut-in on annular BOP.',
-          source_doc: 'NHK-102 End of Well Geological Report',
-          page: 14,
-        },
-      ],
-      source_page: 14,
-      similarity_score: 0.94,
-      confidence: 0.89,
-      is_read: false,
-      is_acknowledged: false,
-      is_simulated: true,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 'alert-2',
-      well_id: 'w-mrn-103',
-      alert_type: 'risk_threshold',
-      severity: 'warning',
-      title: 'Lost Circulation Alert: Tipam Sandstone Transition',
-      message: 'Severe loss zone anticipated entering coarse sandstone interval with 90 bbl/hr loss rate in offset wells.',
-      why: 'Lower fracture gradient of 11.1 ppg EMW encountered in adjacent fault block.',
-      related_well_ids: ['MRN-104'],
-      depth_m: 2480,
-      formation_name: 'Tipam Sandstone',
-      evidence: [
-        {
-          type: 'mud_loss_record',
-          description: 'Total losses of 340 bbls cured with fiber LCM pill.',
-          source_doc: 'MRN-104 Mud Loss Log',
-          page: 21,
-        },
-      ],
-      source_page: 21,
+      title: 'MUD LOSS CRITICAL ALERT',
+      message: 'Severe mud loss of 120 bbl/hr in Barail Coal-Shale (F3) at 2752.4m.',
+      why: 'Correlated offset cluster: 3 nearby wells (DEMO-WELL-101, DEMO-WELL-102, DEMO-WELL-103) experienced severe mud_loss in Barail Coal-Shale (F3) within depth band 2745-2770m.',
+      which_wells: ['DEMO-WELL-101', 'DEMO-WELL-102', 'DEMO-WELL-103'],
+      related_well_ids: ['DEMO-WELL-101', 'DEMO-WELL-102', 'DEMO-WELL-103'],
+      evidence: 'DEMO-WELL-101 suffered mud_loss at 2752.4m: Severe mud loss of 120 bbl/hr upon traversing micro-fractured zone.',
+      source_doc: 'Daily Drilling Report — DEMO-WELL-101',
+      source_page: 3,
       similarity_score: 0.88,
-      confidence: 0.85,
+      confidence_score: 0.95,
+      confidence: 0.95,
       is_read: false,
       is_acknowledged: false,
-      is_simulated: true,
       created_at: new Date().toISOString(),
     },
   ];
 }
 
-export async function findSimilarWells(wellId: string, limit = 5): Promise<SimilarWell[]> {
+export async function fetchAlerts(): Promise<Alert[]> {
+  return await getAlerts();
+}
+
+export async function acknowledgeAlert(alertId: string): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE}/similarity/find`, {
+    const res = await fetch(`${API_BASE}/risk/alerts/${alertId}/acknowledge`, { method: 'PATCH' });
+    if (res.ok) return await res.json();
+  } catch (e) {}
+  return { status: 'acknowledged', alert_id: alertId };
+}
+
+// ─── Phase 7: RAG Copilot ───
+
+export async function queryCopilot(question: string, wellId?: string): Promise<CopilotQueryResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/copilot/query`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ well_id: wellId, limit }),
+      body: JSON.stringify({ question, well_id: wellId }),
     });
-    if (res.ok) {
-      const data = await res.json();
-      return data.similar_wells;
-    }
-  } catch (e) {
-    console.warn('Backend unavailable, using simulated similar wells');
-  }
+    if (res.ok) return await res.json();
+  } catch (e) {}
 
-  return [
-    {
-      well_id: 'w-nhk-102',
-      well_name: 'Nahorkatiya Well NHK-102',
-      well_id_code: 'NHK-102',
-      spatial_score: 0.96,
-      depth_score: 0.94,
-      formation_score: 0.92,
-      event_score: 0.88,
-      semantic_score: 0.95,
-      overall_similarity: 0.93,
-      distance_km: 1.4,
-      shared_formations: ['Tipam Sandstone', 'Barail Coal-Shale', 'Kopili Formation'],
-      common_events: ['kick', 'wellbore_instability'],
-    },
-    {
-      well_id: 'w-mrn-104',
-      well_name: 'Moran Well MRN-104',
-      well_id_code: 'MRN-104',
-      spatial_score: 0.72,
-      depth_score: 0.85,
-      formation_score: 0.89,
-      event_score: 0.80,
-      semantic_score: 0.75,
-      overall_similarity: 0.81,
-      distance_km: 18.2,
-      shared_formations: ['Tipam Sandstone', 'Barail Coal-Shale'],
-      common_events: ['lost_circulation'],
-    },
-  ];
+  return {
+    answer: `Yes, based on verified institutional drilling records, multiple offset wells experienced mud loss incidents:\n- **DEMO-WELL-101**: Experienced severe Mud Loss at 2752.4m in Barail Coal-Shale Formation (F3). [DEMO-WELL-101, Daily Drilling Report — DEMO-WELL-101, Page 3]\n- **DEMO-WELL-103**: Experienced severe Mud Loss at 2758.2m in Barail Coal-Shale Formation (F3). [DEMO-WELL-103, Daily Drilling Report — DEMO-WELL-103, Page 3]`,
+    citations: [
+      { well: 'DEMO-WELL-101', doc: 'Daily Drilling Report — DEMO-WELL-101', page: 3, snippet: 'Severe mud loss of 120 bbl/hr in Barail Coal-Shale (F3) at 2752.4m.' },
+      { well: 'DEMO-WELL-103', doc: 'Daily Drilling Report — DEMO-WELL-103', page: 3, snippet: 'Sudden mud loss of 95 bbl/hr in Barail Coal-Shale (F3) at 2758.2m.' },
+    ],
+    disclaimer: '⚠️ SIMULATED DATA — NOT OIL INDIA DATA',
+  };
 }
 
 export async function askCopilot(query: string, wellId?: string): Promise<CopilotResponse> {
-  try {
-    const res = await fetch(`${API_BASE}/copilot/ask`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, well_id: wellId }),
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {
-    console.warn('Backend unavailable, using simulated copilot');
-  }
-
+  const res = await queryCopilot(query, wellId);
   return {
     query,
-    response: `### Institutional Memory Intelligence Analysis\n\n**Verified Analogues & Risk Evaluation:**\n- **Target Interval**: Depth \`2850m - 3200m\` (*Barail Coal-Shale*).\n- **Deterministic Risk Rating**: \`0.68\` (HIGH) | Confidence \`88%\`.\n- **Pore Pressure Window**: Offset wells show sudden overpressured gas transition with pore pressure equivalent of \`12.4 ppg\`.\n\n#### Historical Incidents from Offset Wells:\n1. **NHK-102** (1.4 km offset): Encountered 28 bbl kick at \`2940m\`. SIDPP reached 420 psi.\n2. **MRN-103** (18 km offset): Lost circulation of 95 bbl/hr at \`2480m\` in upper Tipam Sandstone.\n\n#### Operational Recommendations:\n- Stage barite weighting pills on active suction tank prior to drilling below \`2800m\`.\n- Slow trip speeds to minimize swab pressures when pulling through Kopili shales.`,
-    citations: [
-      {
-        well_name: 'Nahorkatiya Well NHK-102',
-        document_title: 'NHK-102 Completion Report',
-        page: 14,
-        excerpt: 'High-pressure kick encountered at 2940m requiring 1.2 ppg mud density increase.',
-        relevance: 0.95,
-      },
-      {
-        well_name: 'Moran Well MRN-103',
-        document_title: 'MRN-103 Mud Logging Report',
-        page: 21,
-        excerpt: 'Severe mud loss in porous sandstone matrix.',
-        relevance: 0.88,
-      },
-    ],
-    disclaimer: '⚠️ SIMULATED DATA — This response is generated from synthetic data for demonstration only. LLM narration with cited sources.',
+    response: res.answer,
+    answer: res.answer,
+    citations: res.citations.map((c) => ({
+      well_name: c.well,
+      document_title: c.doc,
+      page: c.page,
+      excerpt: c.snippet,
+      confidence: 0.95,
+    })),
+    disclaimer: res.disclaimer,
   };
 }
 
