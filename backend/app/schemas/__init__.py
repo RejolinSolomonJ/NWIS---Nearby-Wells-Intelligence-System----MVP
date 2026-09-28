@@ -284,6 +284,24 @@ class CopilotResponse(BaseModel):
     disclaimer: str = "⚠️ SIMULATED DATA — Institutional memory generated without proprietary Oil India data."
 
 
+class CopilotCitationItem(BaseModel):
+    well: str
+    doc: str
+    page: int
+    snippet: str
+
+
+class CopilotQueryRequest(BaseModel):
+    question: str
+    well_id: Optional[uuid.UUID] = None
+
+
+class CopilotQueryResponse(BaseModel):
+    answer: str
+    citations: List[CopilotCitationItem] = []
+    disclaimer: str = "⚠️ SIMULATED DATA — NOT OIL INDIA DATA"
+
+
 # ─── User & Auth Schemas ───
 class UserBase(BaseModel):
     username: str

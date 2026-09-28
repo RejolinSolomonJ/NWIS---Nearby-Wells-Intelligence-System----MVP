@@ -11,16 +11,26 @@ import os
 import json
 from typing import List, Dict, Any, Optional, Tuple
 
-DATASET_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-    "synthetic_data",
-    "dataset.json",
-)
+def _find_dataset_path() -> Optional[str]:
+    candidates = [
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "synthetic_data", "dataset.json"),
+        os.path.join(os.getcwd(), "synthetic_data", "dataset.json"),
+        os.path.join(os.path.dirname(os.getcwd()), "synthetic_data", "dataset.json"),
+        "/synthetic_data/dataset.json",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return os.path.abspath(c)
+    return None
+
+
+DATASET_PATH = _find_dataset_path()
 
 
 def _load_dataset() -> Dict[str, Any]:
-    if os.path.exists(DATASET_PATH):
-        with open(DATASET_PATH, "r", encoding="utf-8") as f:
+    p = _find_dataset_path()
+    if p and os.path.exists(p):
+        with open(p, "r", encoding="utf-8") as f:
             return json.load(f)
     return {"wells": [], "formations": [], "drilling_events": [], "reports": [], "report_chunks": []}
 

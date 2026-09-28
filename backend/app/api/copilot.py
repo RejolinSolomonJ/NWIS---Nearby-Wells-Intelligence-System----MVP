@@ -19,7 +19,13 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.models import Well, Formation, DrillingEvent
-from app.schemas import CopilotQuery, CopilotResponse, Citation
+from app.schemas import (
+    CopilotQuery,
+    CopilotResponse,
+    Citation,
+    CopilotQueryRequest,
+    CopilotQueryResponse,
+)
 from app.services.rag_copilot.service import rag_service
 
 router = APIRouter(prefix="/copilot", tags=["Copilot"])
@@ -36,6 +42,27 @@ def _load_dataset():
         with open(DATASET_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
+
+
+@router.post("/query", response_model=CopilotQueryResponse)
+async def query_copilot(
+    body: CopilotQueryRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    PHASE 7 FLAGSHIP: RAG Copilot (Citation-Enforced)
+    1. Parse query filters (well/depth/formation/event_type).
+    2. Primary structured search on drilling_events + secondary on report_chunks.
+    3. Merged + deduplicated by (well_id, depth, report_id).
+    4. Strict prompt template with citation enforcement.
+    5. Returns { answer, citations: [{well, doc, page, snippet}] }.
+    """
+    result = rag_service.answer_query(body.question)
+    return CopilotQueryResponse(
+        answer=result["answer"],
+        citations=result["citations"],
+        disclaimer=result.get("disclaimer", "⚠️ SIMULATED DATA — NOT OIL INDIA DATA"),
+    )
 
 
 @router.post("/ask", response_model=CopilotResponse)
