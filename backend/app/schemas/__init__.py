@@ -89,6 +89,8 @@ class DrillingEventBase(BaseModel):
     severity: Optional[str] = None
     description: Optional[str] = None
     page_number: Optional[int] = None
+    needs_review: Optional[bool] = False
+    raw_text_snippet: Optional[str] = None
 
 
 class DrillingEventCreate(DrillingEventBase):
