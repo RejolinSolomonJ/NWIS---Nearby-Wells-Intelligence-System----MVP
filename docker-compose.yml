@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   # ─── PostgreSQL 15 + PostGIS + pgvector (Single DB Service) ───
   db:
@@ -22,6 +24,42 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # ─── FastAPI Core Backend ───
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nwis-x-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-nwis}:${POSTGRES_PASSWORD:-nwis_secret_change_me}@db:5432/${POSTGRES_DB:-nwis_x}
+      SECRET_KEY: ${SECRET_KEY:-nwis_super_secret_jwt_key_sih26121_oil_india}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./synthetic_data:/synthetic_data:ro
+
+  # ─── React + Vite Frontend ───
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nwis-x-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   pgdata:

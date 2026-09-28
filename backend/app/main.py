@@ -12,7 +12,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import engine
-from app.api import wells, formations, events, reports
+from app.api import wells, formations, events, reports, similarity, risk, copilot, auth
 from app.schemas import HealthResponse, ErrorResponse
 
 app = FastAPI(
@@ -80,17 +80,24 @@ async def health_check():
 
 
 # ─── Register Routers ───
-# Direct root paths (for /wells, /wells/nearby, /formations/{well_id}, /events, /reports)
 app.include_router(wells.router)
 app.include_router(formations.router)
 app.include_router(events.router)
 app.include_router(reports.router)
+app.include_router(similarity.router)
+app.include_router(risk.router)
+app.include_router(copilot.router)
+app.include_router(auth.router)
 
 # Also register under /api/v1 for versioned frontend client access
 app.include_router(wells.router, prefix="/api/v1")
 app.include_router(formations.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1")
 app.include_router(reports.router, prefix="/api/v1")
+app.include_router(similarity.router, prefix="/api/v1")
+app.include_router(risk.router, prefix="/api/v1")
+app.include_router(copilot.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])

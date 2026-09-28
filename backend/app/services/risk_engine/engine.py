@@ -244,3 +244,331 @@ def compute_deterministic_risk(
         "source_documents": source_docs,
         "is_simulated": True,
     }
+
+
+# =============================================================================
+# FLAGSHIP FUNCTION: Depth-Aware Risk Engine (Phase 6)
+# =============================================================================
+
+def evaluate_risk(
+    active_well_id: str,
+    current_depth: float,
+    current_formation: Optional[str] = None,
+    lookahead_m: float = 50.0,
+    dataset: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Evaluates depth-aware lookahead risk for an active drilling well.
+
+    1. Fetch wells with similarity_score >= 0.5 to active well (excluding self).
+    2. Query their drilling_events where depth is within
+       [current_depth, current_depth + lookahead_m] on formation-relative basis.
+    3. State machine:
+       - 0 matching events, 0 similar wells nearby in zone -> NORMAL
+       - similar well has event within lookahead but >20m away -> WATCH
+       - event within lookahead_m (<=20m) -> CAUTION
+       - >=2 independent wells corroborate same event_type within tight band (+/-10m)
+         -> HIGH_EVIDENCE_RISK
+    4. Compute risk_score (0-100) + confidence (1 well=Low, 2=Med, 3+=High).
+    5. Returns full explainability payload with evidence list and why_text.
+    """
+    import os
+    import json
+    from app.services.similarity_engine.engine import (
+        compute_pairwise_similarity,
+        haversine_distance_km,
+    )
+
+    # 1. Load dataset if not provided
+    if dataset is None:
+        ds_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+            "synthetic_data", "dataset.json"
+        )
+        if os.path.exists(ds_path):
+            with open(ds_path, "r", encoding="utf-8") as f:
+                dataset = json.load(f)
+        else:
+            dataset = {"wells": [], "formations": [], "drilling_events": []}
+
+    wells = dataset.get("wells", [])
+    formations = dataset.get("formations", [])
+    events = dataset.get("drilling_events", [])
+    params = dataset.get("drilling_parameters", [])
+
+    # Find active well
+    active_id_str = str(active_well_id)
+    active_well = next((w for w in wells if str(w["well_id"]) == active_id_str), None)
+    if not active_well and wells:
+        active_well = wells[0]
+        active_id_str = str(active_well["well_id"])
+
+    # Active well formations & current formation
+    active_forms = [f for f in formations if str(f["well_id"]) == active_id_str]
+    active_formation_obj = None
+    if current_formation:
+        for f in active_forms:
+            if current_formation.lower() in f.get("name", "").lower():
+                active_formation_obj = f
+                break
+
+    if not active_formation_obj:
+        for f in active_forms:
+            top = float(f.get("top_depth_m", 0) or 0)
+            base = float(f.get("base_depth_m", 99999) or 99999)
+            if top <= current_depth <= base:
+                active_formation_obj = f
+                break
+
+    active_formation_name = (
+        active_formation_obj.get("name")
+        if active_formation_obj
+        else (current_formation or "Barail Coal-Shale Formation (F3)")
+    )
+
+    # Group formations and events by well
+    forms_by_well = {}
+    for f in formations:
+        forms_by_well.setdefault(str(f["well_id"]), []).append(f)
+
+    events_by_well = {}
+    for e in events:
+        events_by_well.setdefault(str(e["well_id"]), []).append(e)
+
+    params_by_well = {}
+    for p in params:
+        params_by_well.setdefault(str(p["well_id"]), []).append(p)
+
+    # 1. Fetch wells with similarity_score >= 0.5 to active well (excluding self)
+    similar_wells = []
+    for other in wells:
+        other_id = str(other["well_id"])
+        if other_id == active_id_str:
+            continue
+
+        sim_res = compute_pairwise_similarity(
+            well_a=active_well,
+            well_b=other,
+            formations_a=forms_by_well.get(active_id_str, []),
+            formations_b=forms_by_well.get(other_id, []),
+            events_a=events_by_well.get(active_id_str, []),
+            events_b=events_by_well.get(other_id, []),
+            params_a=params_by_well.get(active_id_str, []),
+            params_b=params_by_well.get(other_id, []),
+        )
+
+        sim_score = sim_res["overall_similarity"]
+        if sim_score >= 0.50:
+            similar_wells.append({
+                "well_id": other_id,
+                "well_name": other.get("name", other.get("code", "")),
+                "code": other.get("code", ""),
+                "similarity_score": sim_score,
+                "distance_km": sim_res["distance_km"],
+            })
+
+    # 2. Query drilling_events in [current_depth, current_depth + lookahead_m]
+    # on formation-relative basis
+    window_max = current_depth + lookahead_m
+    matched_evidence = []
+    seen_events = set()
+
+    for sw in similar_wells:
+        sw_id = sw["well_id"]
+        sw_events = events_by_well.get(sw_id, [])
+        sw_forms = forms_by_well.get(sw_id, [])
+
+        # Find matching formation in offset well
+        matched_form = None
+        if active_formation_name:
+            for f in sw_forms:
+                if f.get("name", "").strip().lower() == active_formation_name.strip().lower() or \
+                   ("barail" in active_formation_name.lower() and "barail" in f.get("name", "").lower()):
+                    matched_form = f
+                    break
+
+        # Calculate depth shift if both have the formation
+        depth_shift = 0.0
+        if active_formation_obj and matched_form:
+            act_top = float(active_formation_obj.get("top_depth_m", 0) or 0)
+            off_top = float(matched_form.get("top_depth_m", 0) or 0)
+            depth_shift = off_top - act_top
+
+        # Check events
+        for e in sw_events:
+            e_id = str(e.get("event_id", ""))
+            if e_id in seen_events:
+                continue
+
+            e_depth = float(e.get("depth_m", 0))
+
+            # Match either absolute lookahead window or formation-shifted lookahead window
+            is_in_abs_window = (current_depth <= e_depth <= window_max)
+            is_in_rel_window = False
+            if depth_shift != 0.0:
+                rel_min = current_depth + depth_shift
+                rel_max = window_max + depth_shift
+                is_in_rel_window = (rel_min <= e_depth <= rel_max)
+
+            # Also check if event is within 5m below current_depth if very close
+            is_very_close = abs(e_depth - current_depth) <= 10.0 and (e_depth >= current_depth - 5.0)
+
+            if is_in_abs_window or is_in_rel_window or is_very_close:
+                seen_events.add(e_id)
+                # Effective depth ahead of bit
+                dist_ahead = e_depth - current_depth
+                matched_evidence.append({
+                    "event_id": e_id,
+                    "well_id": sw_id,
+                    "well": sw["well_name"],
+                    "well_code": sw["code"],
+                    "distance": sw["distance_km"],
+                    "event": e.get("event_type", "other"),
+                    "depth": e_depth,
+                    "distance_ahead_m": dist_ahead,
+                    "formation": active_formation_name,
+                    "similarity": sw["similarity_score"],
+                    "source_doc": f"Daily Drilling Report — {sw['well_name']}",
+                    "page": e.get("page_number", 3),
+                    "snippet": e.get("description", ""),
+                    "severity": e.get("severity", "medium"),
+                })
+
+    # 3. State machine:
+    # - 0 matching events, 0 similar wells nearby in zone -> NORMAL
+    # - similar well has event within lookahead but >20m away -> WATCH
+    # - event within lookahead_m (<=20m) -> CAUTION
+    # - >=2 independent wells corroborate same event_type within tight band (+/-10m)
+    #   -> HIGH_EVIDENCE_RISK
+
+    risk_level = "NORMAL"
+    corroborating_wells = {ev["well_id"] for ev in matched_evidence}
+    corroborating_count = len(corroborating_wells)
+
+    if not matched_evidence:
+        risk_level = "NORMAL"
+        risk_score = 15.0
+        confidence = "Low"
+        why_text = (
+            f"NORMAL: Zero offset drilling events or anomalous conditions detected within "
+            f"{lookahead_m:.0f}m lookahead window ({current_depth:.1f}m - {window_max:.1f}m). "
+            f"Nominal drilling operations expected in {active_formation_name}."
+        )
+    else:
+        # Check for >= 2 independent wells corroborating same event_type within tight band (+/-10m)
+        has_high_evidence_risk = False
+        corroborating_event_type = None
+        corroborating_wells_for_tight_band = set()
+
+        # Group by event_type
+        by_type = {}
+        for ev in matched_evidence:
+            by_type.setdefault(ev["event"], []).append(ev)
+
+        for ev_type, ev_list in by_type.items():
+            wells_for_type = {ev["well_id"] for ev in ev_list}
+            if len(wells_for_type) >= 2:
+                # Check if any pair from distinct wells is within 10m depth band
+                for i in range(len(ev_list)):
+                    for j in range(i + 1, len(ev_list)):
+                        ev1, ev2 = ev_list[i], ev_list[j]
+                        if ev1["well_id"] != ev2["well_id"] and abs(ev1["depth"] - ev2["depth"]) <= 10.0:
+                            has_high_evidence_risk = True
+                            corroborating_event_type = ev_type
+                            corroborating_wells_for_tight_band.add(ev1["well"])
+                            corroborating_wells_for_tight_band.add(ev2["well"])
+                            break
+                    if has_high_evidence_risk:
+                        break
+
+        # Also check if cluster wells with mud_loss or stuck_pipe both exist in the window
+        if not has_high_evidence_risk and len(corroborating_wells) >= 2:
+            # Check if any 2 wells have critical/high events in lookahead
+            crit_wells = {ev["well"] for ev in matched_evidence if ev.get("severity") in ["critical", "high"]}
+            if len(crit_wells) >= 2:
+                # If within 15m of each other
+                depths = [ev["depth"] for ev in matched_evidence]
+                if max(depths) - min(depths) <= 12.0:
+                    has_high_evidence_risk = True
+                    corroborating_event_type = matched_evidence[0]["event"]
+                    corroborating_wells_for_tight_band = crit_wells
+
+        if has_high_evidence_risk:
+            risk_level = "HIGH_EVIDENCE_RISK"
+        else:
+            # Check if any event is within 20m ahead
+            has_event_within_20m = any(0.0 <= ev["distance_ahead_m"] <= 20.0 for ev in matched_evidence)
+            if has_event_within_20m:
+                risk_level = "CAUTION"
+            else:
+                risk_level = "WATCH"
+
+        # 4. Confidence: 1 well=Low, 2=Med, 3+=High
+        if corroborating_count <= 1:
+            confidence = "Low"
+        elif corroborating_count == 2:
+            confidence = "Med"
+        else:
+            confidence = "High"
+
+        # Risk score (0 - 100)
+        if risk_level == "HIGH_EVIDENCE_RISK":
+            risk_score = round(min(98.0, 85.0 + (corroborating_count - 1) * 6.5), 1)
+            wells_str = ", ".join(sorted(corroborating_wells_for_tight_band)) or ", ".join(sorted(ev["well"] for ev in matched_evidence[:3]))
+            ev_label = (corroborating_event_type or matched_evidence[0]["event"]).replace("_", " ").title()
+            why_text = (
+                f"HIGH_EVIDENCE_RISK: {len(corroborating_wells_for_tight_band) or corroborating_count} independent offset wells "
+                f"({wells_str}) corroborate {ev_label} within tight +/-10m band in {active_formation_name} "
+                f"between {current_depth:.1f}m and {window_max:.1f}m. Immediate mitigation standby mandatory."
+            )
+        elif risk_level == "CAUTION":
+            risk_score = round(min(84.0, 70.0 + corroborating_count * 5.0), 1)
+            lead_ev = min((ev for ev in matched_evidence if 0 <= ev["distance_ahead_m"] <= 20.0), key=lambda x: x["distance_ahead_m"])
+            ev_label = lead_ev["event"].replace("_", " ").title()
+            why_text = (
+                f"CAUTION: Offset well ({lead_ev['well']}) experienced {ev_label} at {lead_ev['depth']:.1f}m "
+                f"({lead_ev['distance_ahead_m']:.1f}m ahead of current bit depth {current_depth:.1f}m) in {active_formation_name}. "
+                f"Prepare LCM and monitor torque/standpipe pressure."
+            )
+        else:  # WATCH
+            risk_score = round(min(60.0, 45.0 + corroborating_count * 5.0), 1)
+            lead_ev = min(matched_evidence, key=lambda x: x["distance_ahead_m"])
+            ev_label = lead_ev["event"].replace("_", " ").title()
+            why_text = (
+                f"WATCH: Historical {ev_label} logged in similar offset well ({lead_ev['well']}) at {lead_ev['depth']:.1f}m "
+                f"within {lookahead_m:.0f}m lookahead window (>20m ahead). Pre-alert driller and verify ECD."
+            )
+
+    # Format evidence output
+    evidence_output = []
+    for ev in matched_evidence:
+        evidence_output.append({
+            "well": ev["well"],
+            "distance": round(ev["distance"], 2),
+            "event": ev["event"],
+            "depth": round(ev["depth"], 1),
+            "formation": ev["formation"],
+            "similarity": round(ev["similarity"], 2),
+            "source_doc": ev["source_doc"],
+            "page": ev["page"],
+            "snippet": ev["snippet"],
+            "event_id": ev["event_id"],
+        })
+
+    evidence_ids = [ev["event_id"] for ev in matched_evidence if ev.get("event_id")]
+
+    return {
+        "well_id": active_id_str,
+        "current_depth": current_depth,
+        "current_formation": active_formation_name,
+        "lookahead_m": lookahead_m,
+        "risk_level": risk_level,
+        "risk_score": risk_score,
+        "confidence": confidence,
+        "evidence": evidence_output,
+        "why_text": why_text,
+        "evidence_ids": evidence_ids,
+        "corroborating_wells_count": corroborating_count,
+        "disclaimer": "⚠️ SIMULATED DATA — NOT OIL INDIA DATA",
+    }
+

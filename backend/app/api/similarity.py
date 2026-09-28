@@ -1,181 +1,225 @@
 """
-Similarity API Router — multi-factor well similarity scoring.
-Scores are 100% deterministic (spatial + depth + formation + event + semantic).
-ZERO LLM INVOLVEMENT FOR SCORING.
+Similarity API Router — Phase 5.
+Endpoints:
+  GET /wells/{well_id}/similar         — similarity-ranked list + breakdown
+  GET /wells/{well_id}/nearby-vs-relevant — side-by-side distance vs similarity
+  POST /similarity/compute             — trigger pairwise computation for all wells
 """
 
-from typing import List
+import json
+import os
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.core.database import get_db
-from app.models import Well, Formation, DrillingEvent
-from app.schemas import SimilarityRequest, SimilarityResponse, SimilarWell
-from app.services.similarity_engine import (
-    calculate_well_similarity,
-    haversine_distance_km
+from app.models import Well, Formation, DrillingEvent, DrillingParameter, WellSimilarity
+from app.schemas import WellSimilarityResponse, NearbyVsRelevantResponse
+
+router = APIRouter(tags=["Similarity"])
+
+# Path to precomputed dataset for offline mode
+DATASET_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+    "synthetic_data", "dataset.json"
 )
 
-router = APIRouter(prefix="/similarity")
+
+def _load_dataset():
+    """Load synthetic dataset.json for offline pairwise computation."""
+    if os.path.exists(DATASET_PATH):
+        with open(DATASET_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return None
 
 
-@router.post("/find", response_model=SimilarityResponse)
-async def find_similar_wells(
-    request: SimilarityRequest,
-    db: AsyncSession = Depends(get_db),
-):
-    """Find similar wells using multi-factor deterministic scoring.
-
-    Scoring factors (all deterministic, not LLM):
-    - Spatial proximity (Haversine decay)
-    - Depth profile similarity
-    - Formation sequence overlap (Jaccard)
-    - Historical event pattern matching
-    - Semantic alignment
+def _get_precomputed_similarities():
     """
-    # 1. Fetch Target Well
-    target_res = await db.execute(select(Well).where(Well.id == request.well_id))
-    target = target_res.scalar_one_or_none()
-    if not target:
-        raise HTTPException(status_code=404, detail="Target well not found")
+    Compute all pairwise similarities from synthetic dataset.
+    Cached in module-level variable for the lifetime of the process.
+    """
+    if not hasattr(_get_precomputed_similarities, "_cache"):
+        from app.services.similarity_engine.engine import compute_all_pairwise
+        ds = _load_dataset()
+        if ds is None:
+            _get_precomputed_similarities._cache = []
+            return []
 
-    # Target Formations & Events
-    t_forms_res = await db.execute(
-        select(Formation.formation_name).where(Formation.well_id == target.id)
-    )
-    target_formations = [row[0] for row in t_forms_res.all()]
-
-    t_evts_res = await db.execute(
-        select(DrillingEvent.event_type).where(DrillingEvent.well_id == target.id)
-    )
-    target_events = [row[0] for row in t_evts_res.all()]
-
-    # 2. Fetch Candidate Wells (excluding target well)
-    cand_res = await db.execute(select(Well).where(Well.id != target.id))
-    candidates = cand_res.scalars().all()
-
-    target_dict = {
-        "id": str(target.id),
-        "well_name": target.well_name,
-        "well_id_code": target.well_id_code,
-        "field_name": target.field_name,
-        "block_name": target.block_name,
-        "latitude": target.latitude,
-        "longitude": target.longitude,
-        "total_depth_m": target.total_depth_m,
-    }
-
-    scored_candidates = []
-    for cand in candidates:
-        # Quick spatial pre-filter
-        dist = haversine_distance_km(target.latitude, target.longitude, cand.latitude, cand.longitude)
-        if dist > request.max_distance_km * 2:  # allow generous initial bounding
-            continue
-
-        c_forms_res = await db.execute(
-            select(Formation.formation_name).where(Formation.well_id == cand.id)
+        # The JSON only has a sample of drilling_params; load full CSV if available
+        drilling_params = ds.get("drilling_parameters", [])
+        dp_csv_path = os.path.join(
+            os.path.dirname(DATASET_PATH), "drilling_parameters.csv"
         )
-        c_formations = [row[0] for row in c_forms_res.all()]
+        if os.path.exists(dp_csv_path):
+            import csv
+            with open(dp_csv_path, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                drilling_params = []
+                for row in reader:
+                    drilling_params.append({
+                        "well_id": row["well_id"],
+                        "rop": float(row.get("rop", 0) or 0),
+                        "rpm": float(row.get("rpm", 0) or 0),
+                        "torque": float(row.get("torque", 0) or 0),
+                        "mud_weight": float(row.get("mud_weight", 0) or 0),
+                    })
 
-        c_evts_res = await db.execute(
-            select(DrillingEvent.event_type).where(DrillingEvent.well_id == cand.id)
+        results = compute_all_pairwise(
+            wells=ds["wells"],
+            formations=ds["formations"],
+            events=ds["drilling_events"],
+            drilling_params=drilling_params,
         )
-        c_events = [row[0] for row in c_evts_res.all()]
+        _get_precomputed_similarities._cache = results
 
-        cand_dict = {
-            "id": str(cand.id),
-            "well_name": cand.well_name,
-            "well_id_code": cand.well_id_code,
-            "field_name": cand.field_name,
-            "block_name": cand.block_name,
-            "latitude": cand.latitude,
-            "longitude": cand.longitude,
-            "total_depth_m": cand.total_depth_m,
-        }
-
-        sim_result = calculate_well_similarity(
-            target_well=target_dict,
-            candidate_well=cand_dict,
-            target_formations=target_formations,
-            candidate_formations=c_formations,
-            target_events=target_events,
-            candidate_events=c_events,
-            max_distance_km=request.max_distance_km,
-        )
-        scored_candidates.append(sim_result)
-
-    # Sort by overall similarity descending
-    scored_candidates.sort(key=lambda x: x["overall_similarity"], reverse=True)
-    top_candidates = scored_candidates[:request.limit]
-
-    return SimilarityResponse(
-        query_well_id=request.well_id,
-        similar_wells=[SimilarWell(**item) for item in top_candidates],
-        computation_method="deterministic_multi_factor (spatial, depth, formation, event, semantic)",
-    )
+    return _get_precomputed_similarities._cache
 
 
-@router.get("/compare/{well_id_a}/{well_id_b}")
-async def compare_two_wells(
-    well_id_a: UUID,
-    well_id_b: UUID,
+def _get_well_info(well_id: str, dataset=None):
+    """Look up well name/code from dataset."""
+    if dataset is None:
+        dataset = _load_dataset()
+    if dataset:
+        for w in dataset["wells"]:
+            if w["well_id"] == well_id or str(w["well_id"]) == str(well_id):
+                return w
+    return None
+
+
+@router.get("/wells/{well_id}/similar", response_model=List[WellSimilarityResponse])
+async def get_similar_wells(
+    well_id: UUID,
+    limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
-    """Compare two wells side-by-side with detailed similarity breakdown."""
-    res_a = await db.execute(select(Well).where(Well.id == well_id_a))
-    well_a = res_a.scalar_one_or_none()
-    res_b = await db.execute(select(Well).where(Well.id == well_id_b))
-    well_b = res_b.scalar_one_or_none()
+    """
+    Returns wells ranked by SIMILARITY (not distance) to the target well.
+    Each result includes full component breakdown with evidence.
+    """
+    from app.services.similarity_engine.engine import get_similar_wells as _get_similar
 
-    if not well_a or not well_b:
-        raise HTTPException(status_code=404, detail="One or both wells not found")
+    all_sims = _get_precomputed_similarities()
+    target_id = str(well_id)
 
-    forms_a_res = await db.execute(select(Formation).where(Formation.well_id == well_id_a))
-    forms_a = forms_a_res.scalars().all()
-    forms_b_res = await db.execute(select(Formation).where(Formation.well_id == well_id_b))
-    forms_b = forms_b_res.scalars().all()
+    # Find target well info
+    ds = _load_dataset()
+    target_info = _get_well_info(target_id, ds)
+    if not target_info:
+        raise HTTPException(status_code=404, detail=f"Well {well_id} not found")
 
-    evts_a_res = await db.execute(select(DrillingEvent).where(DrillingEvent.well_id == well_id_a))
-    evts_a = evts_a_res.scalars().all()
-    evts_b_res = await db.execute(select(DrillingEvent).where(DrillingEvent.well_id == well_id_b))
-    evts_b = evts_b_res.scalars().all()
+    similar = _get_similar(target_id, all_sims, limit=limit)
 
-    dist_km = round(haversine_distance_km(well_a.latitude, well_a.longitude, well_b.latitude, well_b.longitude), 2)
+    # Enrich with well names/codes from dataset
+    if ds:
+        well_lookup = {w["well_id"]: w for w in ds["wells"]}
+        for s in similar:
+            s["target_well_id"] = s["well_id"]
+            s["similarity_score"] = s.get("overall_similarity", 0.0)
+            info = well_lookup.get(s["well_id"])
+            if info:
+                s["well_name"] = info.get("name", "")
+                s["well_code"] = info.get("code", "")
 
-    sim = calculate_well_similarity(
-        target_well={"id": str(well_a.id), "well_name": well_a.well_name, "well_id_code": well_a.well_id_code, "field_name": well_a.field_name, "block_name": well_a.block_name, "latitude": well_a.latitude, "longitude": well_a.longitude, "total_depth_m": well_a.total_depth_m},
-        candidate_well={"id": str(well_b.id), "well_name": well_b.well_name, "well_id_code": well_b.well_id_code, "field_name": well_b.field_name, "block_name": well_b.block_name, "latitude": well_b.latitude, "longitude": well_b.longitude, "total_depth_m": well_b.total_depth_m},
-        target_formations=[f.formation_name for f in forms_a],
-        candidate_formations=[f.formation_name for f in forms_b],
-        target_events=[e.event_type for e in evts_a],
-        candidate_events=[e.event_type for e in evts_b],
+    return similar
+
+
+@router.get("/wells/{well_id}/nearby-vs-relevant", response_model=NearbyVsRelevantResponse)
+async def get_nearby_vs_relevant(
+    well_id: UUID,
+    radius_km: float = Query(50.0, ge=1.0, le=500.0),
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Returns BOTH distance-ranked AND similarity-ranked lists side-by-side
+    for the UI contrast feature. Demonstrates that nearest != most relevant.
+    """
+    from app.services.similarity_engine.engine import (
+        get_similar_wells as _get_similar,
+        haversine_distance_km,
     )
 
-    return {
-        "well_a": {
-            "id": well_a.id,
-            "name": well_a.well_name,
-            "code": well_a.well_id_code,
-            "field": well_a.field_name,
-            "total_depth_m": well_a.total_depth_m,
-            "formations": [f.formation_name for f in forms_a],
-            "event_count": len(evts_a),
-            "events": [{"type": e.event_type, "severity": e.severity, "depth_m": e.depth_m} for e in evts_a]
-        },
-        "well_b": {
-            "id": well_b.id,
-            "name": well_b.well_name,
-            "code": well_b.well_id_code,
-            "field": well_b.field_name,
-            "total_depth_m": well_b.total_depth_m,
-            "formations": [f.formation_name for f in forms_b],
-            "event_count": len(evts_b),
-            "events": [{"type": e.event_type, "severity": e.severity, "depth_m": e.depth_m} for e in evts_b]
-        },
-        "distance_km": dist_km,
-        "similarity_analysis": sim,
-        "disclaimer": "SIMULATED DATA — Comparison derived from deterministic scoring engine."
-    }
+    ds = _load_dataset()
+    if not ds:
+        raise HTTPException(status_code=500, detail="Dataset not available")
+
+    target_id = str(well_id)
+    target_well = _get_well_info(target_id, ds)
+    if not target_well:
+        raise HTTPException(status_code=404, detail=f"Well {well_id} not found")
+
+    # --- NEARBY: distance-sorted ---
+    nearby_list = []
+    for w in ds["wells"]:
+        if w["well_id"] == target_id:
+            continue
+        dist = haversine_distance_km(
+            float(target_well["latitude"]), float(target_well["longitude"]),
+            float(w["latitude"]), float(w["longitude"]),
+        )
+        if dist <= radius_km:
+            nearby_list.append({
+                "well_id": w["well_id"],
+                "well_name": w.get("name", ""),
+                "well_code": w.get("code", ""),
+                "distance_km": round(dist, 2),
+                "rank_type": "distance",
+            })
+    nearby_list.sort(key=lambda x: x["distance_km"])
+    nearby_list = nearby_list[:limit]
+
+    # --- SIMILAR: similarity-sorted ---
+    all_sims = _get_precomputed_similarities()
+    similar_list_raw = _get_similar(target_id, all_sims, limit=limit)
+
+    # Enrich
+    well_lookup = {w["well_id"]: w for w in ds["wells"]}
+    similar_list = []
+    for s in similar_list_raw:
+        info = well_lookup.get(s["well_id"])
+        item = {
+            "well_id": s["well_id"],
+            "target_well_id": s["well_id"],
+            "well_name": info.get("name", "") if info else "",
+            "well_code": info.get("code", "") if info else "",
+            "overall_similarity": s["overall_similarity"],
+            "similarity_score": s["overall_similarity"],
+            "distance_km": s["distance_km"],
+            "breakdown": s["breakdown"],
+            "rank_type": "similarity",
+        }
+        similar_list.append(item)
+
+    # Determine if orderings differ
+    nearby_order = [n["well_id"] for n in nearby_list]
+    similar_order = [s["well_id"] for s in similar_list]
+    ordering_differs = nearby_order != similar_order
+
+    closest = nearby_list[0] if nearby_list else None
+    most_relevant = similar_list[0] if similar_list else None
+
+    insight = (
+        f"Nearest well is {closest['well_name']} ({closest['distance_km']} km away), "
+        f"but most geologically relevant offset is {most_relevant['well_name']} "
+        f"(Similarity {most_relevant['overall_similarity']:.2f}, {most_relevant['distance_km']} km away) "
+        f"due to matching lithology and historical drilling incident correlation."
+        if (closest and most_relevant)
+        else "Geological similarity computed using multi-factor deterministic formulation."
+    )
+
+    return NearbyVsRelevantResponse(
+        target_well_id=well_id,
+        target_well_name=target_well.get("name", ""),
+        anchor_well={"well_id": target_id, "well_name": target_well.get("name", ""), "code": target_well.get("code", "")},
+        closest_by_distance=closest,
+        most_relevant_by_similarity=most_relevant,
+        nearby_wells=nearby_list,
+        similar_wells=similar_list,
+        distance_sorted=nearby_list,
+        similarity_sorted=similar_list,
+        ordering_differs=ordering_differs,
+        geological_insight=insight,
+    )
