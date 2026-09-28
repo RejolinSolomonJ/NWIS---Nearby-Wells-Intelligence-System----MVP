@@ -1,48 +1,24 @@
 """
 NWIS-X — FastAPI Application Entry Point
-
-Nearby Wells Intelligence & Risk eXplorer
+Phase 3 Core Backend API (CRUD + Geospatial)
 SIH26121 — Oil India Ltd
 """
 
-from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import engine
-from app.api import wells, events, risk, similarity, copilot, reports, auth
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Startup / shutdown lifecycle manager."""
-    # Startup: verify DB connection
-    try:
-        async with engine.begin() as conn:
-            await conn.execute(text("SELECT 1"))
-        print("✅ Database connection verified")
-    except Exception as e:
-        print(f"⚠️ Database connection failed: {e}")
-        print("   Backend will start but DB-dependent routes may fail.")
-    yield
-    # Shutdown: dispose engine
-    await engine.dispose()
-    print("🔌 Database connection pool closed")
-
+from app.api import wells, formations, events, reports
+from app.schemas import HealthResponse, ErrorResponse
 
 app = FastAPI(
-    title=settings.APP_NAME,
-    description=(
-        "Nearby Wells Intelligence & Risk eXplorer — "
-        "Depth-aware drilling institutional-memory and early-warning platform. "
-        "⚠️ All data is SIMULATED for demonstration purposes."
-    ),
-    version=settings.APP_VERSION,
-    lifespan=lifespan,
+    title="NWIS-X Core API",
+    description="Nearby Wells Intelligence & Risk eXplorer — Geospatial & Depth-Aware API. ⚠️ SIMULATED DATA ONLY.",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -50,17 +26,42 @@ app = FastAPI(
 # ─── CORS ───
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+# ─── Structured JSON Error Responses ───
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": exc.detail if isinstance(exc.detail, str) else "HTTP Exception",
+            "detail": exc.detail,
+            "code": exc.status_code,
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "error": "Internal Server Error",
+            "detail": str(exc),
+            "code": 500,
+        },
+    )
+
+
 # ─── Health Check ───
-@app.get("/health", tags=["Health"])
+@app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
-    """Health check endpoint — verifies API + database connectivity."""
+    """System health check endpoint verifying API and DB connectivity."""
     db_status = "unknown"
     try:
         async with engine.begin() as conn:
@@ -69,34 +70,35 @@ async def health_check():
     except Exception:
         db_status = "disconnected"
 
-    return {
-        "status": "healthy" if db_status == "connected" else "degraded",
-        "version": settings.APP_VERSION,
-        "database": db_status,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "simulated_data": True,
-    }
+    return HealthResponse(
+        status="healthy" if db_status == "connected" else "degraded",
+        version="1.0.0",
+        database=db_status,
+        timestamp=datetime.now(timezone.utc),
+        simulated_data=True,
+    )
 
 
-# ─── API v1 Routers ───
-API_V1_PREFIX = "/api/v1"
+# ─── Register Routers ───
+# Direct root paths (for /wells, /wells/nearby, /formations/{well_id}, /events, /reports)
+app.include_router(wells.router)
+app.include_router(formations.router)
+app.include_router(events.router)
+app.include_router(reports.router)
 
-app.include_router(auth.router, prefix=API_V1_PREFIX, tags=["Authentication"])
-app.include_router(wells.router, prefix=API_V1_PREFIX, tags=["Wells"])
-app.include_router(events.router, prefix=API_V1_PREFIX, tags=["Drilling Events"])
-app.include_router(risk.router, prefix=API_V1_PREFIX, tags=["Risk Assessment"])
-app.include_router(similarity.router, prefix=API_V1_PREFIX, tags=["Similarity Engine"])
-app.include_router(copilot.router, prefix=API_V1_PREFIX, tags=["AI Copilot"])
-app.include_router(reports.router, prefix=API_V1_PREFIX, tags=["Reports"])
+# Also register under /api/v1 for versioned frontend client access
+app.include_router(wells.router, prefix="/api/v1")
+app.include_router(formations.router, prefix="/api/v1")
+app.include_router(events.router, prefix="/api/v1")
+app.include_router(reports.router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])
 async def root():
     return {
-        "app": settings.APP_NAME,
-        "version": settings.APP_VERSION,
+        "app": "NWIS-X Nearby Wells Intelligence & Risk eXplorer",
         "docs": "/docs",
         "health": "/health",
-        "api": f"{API_V1_PREFIX}/",
-        "disclaimer": "⚠️ SIMULATED DATA — No proprietary Oil India data is used.",
+        "wells_nearby": "/wells/nearby?lat=27.28&lon=95.34&radius_km=15",
+        "disclaimer": "⚠️ SIMULATED DATA — NOT OIL INDIA DATA",
     }

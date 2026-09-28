@@ -256,7 +256,7 @@ def run_acceptance_queries_local(data):
     # 2. Total Events
     c.execute("SELECT count(*) FROM drilling_events;")
     event_count = c.fetchone()[0]
-    print(f"2. Total Drilling Events count: {event_count} (Expected: ≥ 50)")
+    print(f"2. Total Drilling Events count: {event_count} (Expected: >= 50)")
 
     # 3. Formations with F3
     c.execute("SELECT count(DISTINCT well_id) FROM formations WHERE name LIKE '%F3%';")
@@ -278,7 +278,7 @@ def run_acceptance_queries_local(data):
     rows = c.fetchall()
     print(f"\n4. CONFIRMED 3-WELL F3 CORRELATED RISK CLUSTER ({len(rows)} matching events found):")
     for r in rows:
-        print(f"   • Well: {r[0]:<36} | Depth: {r[1]}m | Event: {r[2]:<12} | Severity: {r[3]:<8}")
+        print(f"   * Well: {r[0]:<36} | Depth: {r[1]}m | Event: {r[2]:<12} | Severity: {r[3]:<8}")
         print(f"     Formation: {r[4]}")
         print(f"     Mitigation Action: {r[5]}")
         print(f"     Mitigation Outcome: {r[6]}\n")
@@ -288,11 +288,11 @@ def run_acceptance_queries_local(data):
     pdf_files = [f for f in os.listdir(reports_dir) if f.endswith(".pdf")] if os.path.exists(reports_dir) else []
     print(f"5. Generated PDF Reports on disk ({reports_dir}): {len(pdf_files)} PDF files")
     for p in pdf_files[:3]:
-        print(f"   • {p} ({os.path.getsize(os.path.join(reports_dir, p))} bytes)")
+        print(f"   * {p} ({os.path.getsize(os.path.join(reports_dir, p))} bytes)")
     if len(pdf_files) > 3:
         print(f"   ... and {len(pdf_files) - 3} more PDF files.")
 
-    print("\n✅ ACCEPTANCE CHECK RESULT: PASSED (15 wells, ≥50 events, 3-well F3 risk cluster confirmed, PDFs on disk)")
+    print("\n[SUCCESS] ACCEPTANCE CHECK RESULT: PASSED (15 wells, >= 50 events, 3-well F3 risk cluster confirmed, PDFs on disk)")
     print("==========================================================================================")
 
 
