@@ -111,7 +111,7 @@ export const LoginPage: React.FC<Props> = ({ onLoginSuccess }) => {
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-sans font-medium mb-4">
               <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-              <span>Smart India Hackathon (SIH) · Problem ID: eRTMAC-NWIS</span>
+              <span>eRTMAC Live Telemetry &amp; Offset Knowledge Engine</span>
             </div>
 
             <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-50 tracking-tight leading-tight mb-4 font-display">
@@ -175,7 +175,7 @@ export const LoginPage: React.FC<Props> = ({ onLoginSuccess }) => {
           </div>
 
           <div className="text-slate-500 text-[11px]">
-            Problem Statement Author: <span className="text-slate-300 font-semibold">Sarim Moin (OIL)</span>
+            Oil India Limited · <span className="text-slate-300 font-semibold">Subsurface Intelligence Console</span>
           </div>
         </div>
       </div>

@@ -221,7 +221,7 @@ export default function App() {
             />
             <div className="hidden sm:block text-left">
               <div className="text-xs font-bold text-white leading-tight font-sans">
-                {currentUser.username || 'Sarim Moin'}
+                {currentUser.username || 'Executive Engineer'}
               </div>
               <div className="text-[10px] text-slate-400 font-sans font-medium leading-tight">
                 OIL India · Admin
