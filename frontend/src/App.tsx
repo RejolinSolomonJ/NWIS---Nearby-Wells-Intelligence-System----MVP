@@ -25,6 +25,7 @@ import { Copilot } from './components/Copilot';
 import { AdminReview } from './components/AdminReview';
 import { EvidenceViewer } from './components/EvidenceViewer';
 import { DepthSlider } from './components/DepthSlider';
+import { DepthCorrelationView } from './components/DepthCorrelationView';
 
 type NavTab =
   | 'dashboard'
@@ -314,108 +315,13 @@ export default function App() {
           )}
 
           {activeTab === 'depth_radar' && (
-            <div className="space-y-6">
-              {/* Depth Lookahead Control Bar */}
-              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                  <div>
-                    <h2 className="text-base font-bold font-mono text-cyan-400 flex items-center gap-2">
-                      <span>🎯</span>
-                      <span>DEPTH-AWARE LOOKAHEAD RISK RADAR</span>
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Deterministic state machine: NORMAL ➔ WATCH ➔ CAUTION ➔ HIGH_EVIDENCE_RISK
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono text-slate-400">SIMULATE BIT DEPTH:</span>
-                    <input
-                      type="number"
-                      step="5"
-                      min="100"
-                      max="4000"
-                      value={currentDepth}
-                      onChange={(e) => setCurrentDepth(parseFloat(e.target.value) || 2700)}
-                      className="w-24 bg-slate-950 border border-slate-700 text-amber-400 px-3 py-1 rounded-lg text-sm font-mono font-bold text-center"
-                    />
-                    <span className="text-xs font-mono text-slate-500">meters</span>
-                  </div>
-                </div>
-
-                <DepthSlider
-                  currentDepth={currentDepth}
-                  maxDepth={selectedWell?.total_depth_m || 3500}
-                  onDepthChange={setCurrentDepth}
-                />
-
-                {/* Real-time State Machine Readout */}
-                {currentRisk && (
-                  <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                      <div className="text-[10px] font-mono text-slate-500 uppercase">STATE MACHINE STATUS</div>
-                      <div
-                        className={`text-base font-bold font-mono mt-1 ${
-                          currentRisk.risk_level === 'HIGH_EVIDENCE_RISK'
-                            ? 'text-rose-400'
-                            : currentRisk.risk_level === 'CAUTION'
-                            ? 'text-amber-400'
-                            : 'text-emerald-400'
-                        }`}
-                      >
-                        {currentRisk.risk_level}
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
-                        Score: {currentRisk.risk_score} / 100 · Confidence: {currentRisk.confidence}
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 md:col-span-2">
-                      <div className="text-[10px] font-mono text-slate-500 uppercase">INSTITUTIONAL WHY SUMMARY</div>
-                      <div className="text-xs text-slate-300 font-mono mt-1 leading-relaxed">
-                        {currentRisk.why_text}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Evidence Trail Card */}
-              {currentRisk && currentRisk.evidence.length > 0 && (
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                  <h3 className="text-sm font-bold font-mono text-slate-200 mb-3 flex items-center gap-2">
-                    <span>📑</span>
-                    <span>CORROBORATING OFFSET EVIDENCE ({currentRisk.evidence.length} MATCHES IN ZONE)</span>
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {currentRisk.evidence.map((ev, i) => (
-                      <div key={i} className="bg-slate-950/90 border border-slate-800/90 p-3.5 rounded-xl text-xs font-mono space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-cyan-400 font-bold">{ev.well}</span>
-                          <span className="text-slate-400 text-[11px]">{ev.distance} km away · Sim {Math.round(ev.similarity * 100)}%</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                            {ev.event.replace('_', ' ')}
-                          </span>
-                          <span className="text-amber-400 font-bold">@ {ev.depth}m</span>
-                          <span className="text-slate-400 text-[11px] truncate">({ev.formation})</span>
-                        </div>
-                        <p className="text-slate-300 text-[11px] line-clamp-2 leading-relaxed bg-slate-900/60 p-2 rounded border border-slate-800/50">
-                          "{ev.snippet}"
-                        </p>
-                        <div className="text-[10px] text-slate-500 flex items-center justify-between">
-                          <span>{ev.source_doc}</span>
-                          <span className="text-cyan-400 font-bold">Page {ev.page}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <RiskRadar well={selectedWell} assessment={null} />
-            </div>
+            <DepthCorrelationView
+              well={selectedWell}
+              wells={wells}
+              initialDepth={currentDepth}
+              onDepthChange={(d) => setCurrentDepth(d)}
+              onRiskChange={(r) => setCurrentRisk(r)}
+            />
           )}
 
           {activeTab === 'institutional_memory' && (

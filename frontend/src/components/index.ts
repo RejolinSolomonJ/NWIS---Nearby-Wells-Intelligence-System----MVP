@@ -1,6 +1,7 @@
 export { Dashboard } from './Dashboard';
 export { Map } from './Map';
 export { WellMap } from './WellMap';
+export { DepthCorrelationView } from './DepthCorrelationView';
 export { RiskRadar } from './RiskRadar';
 export { CompareWells } from './CompareWells';
 export { AlertCard } from './AlertCard';
