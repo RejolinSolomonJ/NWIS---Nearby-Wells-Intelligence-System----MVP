@@ -4,9 +4,10 @@ import { Alert } from '../api/client';
 interface Props {
   alert: Alert;
   onAcknowledge?: (alertId: string) => void;
+  onSelect?: (alert: Alert) => void;
 }
 
-export const AlertCard: React.FC<Props> = ({ alert, onAcknowledge }) => {
+export const AlertCard: React.FC<Props> = ({ alert, onAcknowledge, onSelect }) => {
   const getSeverityBadge = () => {
     switch (alert.severity) {
       case 'critical':
@@ -105,19 +106,29 @@ export const AlertCard: React.FC<Props> = ({ alert, onAcknowledge }) => {
       </div>
 
       {/* Action Footer */}
-      <div className="flex items-center justify-between pt-2">
-        <span className="text-[11px] font-mono text-slate-500">
-          Status: {alert.is_acknowledged ? 'Acknowledged' : 'Pending Review'}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+        <button
+          onClick={() => onSelect?.(alert)}
+          className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-lg text-xs font-mono transition-all border border-cyan-500/30 flex items-center gap-1.5 font-bold"
+        >
+          <span>🔍</span>
+          <span>9-Point Explainability Panel</span>
+        </button>
 
-        {!alert.is_acknowledged && onAcknowledge && (
-          <button
-            onClick={() => onAcknowledge(alert.alert_id || alert.id || '')}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono transition-all border border-slate-700"
-          >
-            ✓ Acknowledge Alert
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono text-slate-500">
+            {alert.is_acknowledged ? 'Acknowledged' : 'Pending'}
+          </span>
+
+          {!alert.is_acknowledged && onAcknowledge && (
+            <button
+              onClick={() => onAcknowledge(alert.alert_id || alert.id || '')}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono transition-all border border-slate-700"
+            >
+              ✓ Ack
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

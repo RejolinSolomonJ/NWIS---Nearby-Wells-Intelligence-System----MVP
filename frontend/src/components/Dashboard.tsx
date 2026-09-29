@@ -17,6 +17,7 @@ interface Props {
   onOpenCompare: (well: Well) => void;
   onDownloadReport: (well: Well) => void;
   onAcknowledgeAlert: (alertId: string) => void;
+  onSelectAlert?: (alert: Alert) => void;
 }
 
 export const Dashboard: React.FC<Props> = ({
@@ -30,6 +31,7 @@ export const Dashboard: React.FC<Props> = ({
   onOpenCompare,
   onDownloadReport,
   onAcknowledgeAlert,
+  onSelectAlert,
 }) => {
   const [currentDepth, setCurrentDepth] = useState<number>(2950);
 
@@ -124,9 +126,10 @@ export const Dashboard: React.FC<Props> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {alerts.map((alert) => (
             <AlertCard
-              key={alert.id}
+              key={alert.id || alert.alert_id}
               alert={alert}
               onAcknowledge={onAcknowledgeAlert}
+              onSelect={onSelectAlert}
             />
           ))}
         </div>

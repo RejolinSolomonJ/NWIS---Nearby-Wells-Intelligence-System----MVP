@@ -19,13 +19,14 @@ import { Dashboard } from './components/Dashboard';
 import { Map } from './components/Map';
 import { WellMap } from './components/WellMap';
 import { RiskRadar } from './components/RiskRadar';
-import { CompareWells } from './components/CompareWells';
 import { AlertCard } from './components/AlertCard';
-import { Copilot } from './components/Copilot';
 import { AdminReview } from './components/AdminReview';
 import { EvidenceViewer } from './components/EvidenceViewer';
 import { DepthSlider } from './components/DepthSlider';
 import { DepthCorrelationView } from './components/DepthCorrelationView';
+import { AlertDetailModal } from './components/AlertDetailModal';
+import { CopilotChat } from './components/CopilotChat';
+import { InstitutionalMemory, CompareWells } from './pages';
 
 type NavTab =
   | 'dashboard'
@@ -49,6 +50,9 @@ export default function App() {
   const [events, setEvents] = useState<DrillingEvent[]>([]);
   const [currentDepth, setCurrentDepth] = useState<number>(2740.0);
 
+  // Alert explainability modal state
+  const [selectedAlertForDetail, setSelectedAlertForDetail] = useState<Alert | null>(null);
+
   // Evidence modal state
   const [evidenceModal, setEvidenceModal] = useState<{
     isOpen: boolean;
@@ -57,6 +61,16 @@ export default function App() {
     excerpt?: string;
     wellName?: string;
   }>({ isOpen: false });
+
+  const handleOpenEvidence = (title: string, page: number, excerpt: string, wellName: string) => {
+    setEvidenceModal({
+      isOpen: true,
+      title,
+      page,
+      excerpt,
+      wellName,
+    });
+  };
 
   // Initial load: health check, wells, alerts, events
   useEffect(() => {
@@ -294,6 +308,7 @@ export default function App() {
               }}
               onDownloadReport={() => {}}
               onAcknowledgeAlert={handleAcknowledgeAlert}
+              onSelectAlert={(a) => setSelectedAlertForDetail(a)}
             />
           )}
 
@@ -321,43 +336,24 @@ export default function App() {
               initialDepth={currentDepth}
               onDepthChange={(d) => setCurrentDepth(d)}
               onRiskChange={(r) => setCurrentRisk(r)}
+              onOpenEvidence={handleOpenEvidence}
+              onSelectAlert={(a) => setSelectedAlertForDetail(a)}
             />
           )}
 
           {activeTab === 'institutional_memory' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div>
-                  <h2 className="text-base font-bold font-mono text-slate-100 flex items-center gap-2">
-                    <span>🏛️</span>
-                    <span>INSTITUTIONAL MEMORY &amp; EARLY WARNING ALERTS</span>
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Non-negotiable 8-point breakdown: WHY, WHICH WELLS, DEPTH, FORMATION, EVIDENCE, SOURCE DOC+PAGE, SIMILARITY, CONFIDENCE
-                  </p>
-                </div>
-                <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30 font-bold">
-                  {alerts.length} ALERTS LOGGED
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {alerts.map((alert) => (
-                  <AlertCard
-                    key={alert.alert_id || (alert as any).id}
-                    alert={alert}
-                    onAcknowledge={handleAcknowledgeAlert}
-                  />
-                ))}
-              </div>
-            </div>
+            <InstitutionalMemory
+              wells={wells}
+              onOpenEvidence={handleOpenEvidence}
+            />
           )}
 
           {activeTab === 'copilot' && (
-            <Copilot
+            <CopilotChat
               wells={wells}
               selectedWell={selectedWell}
               onSelectWell={setSelectedWell}
+              onOpenEvidence={handleOpenEvidence}
             />
           )}
 
@@ -365,6 +361,7 @@ export default function App() {
             <CompareWells
               wells={wells}
               initialWellA={selectedWell}
+              onOpenEvidence={handleOpenEvidence}
               onClose={() => setActiveTab('dashboard')}
             />
           )}
@@ -373,10 +370,18 @@ export default function App() {
         </main>
       </div>
 
-      {/* 4. Evidence Modal */}
+      {/* 4. Alert Explainability Modal (Phase 11) */}
+      <AlertDetailModal
+        alert={selectedAlertForDetail}
+        isOpen={!!selectedAlertForDetail}
+        onClose={() => setSelectedAlertForDetail(null)}
+        onOpenEvidence={handleOpenEvidence}
+      />
+
+      {/* 5. Evidence Modal (Phase 11) */}
       {evidenceModal.isOpen && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="max-w-2xl w-full">
+          <div className="max-w-4xl w-full">
             <EvidenceViewer
               documentTitle={evidenceModal.title}
               pageNumber={evidenceModal.page}

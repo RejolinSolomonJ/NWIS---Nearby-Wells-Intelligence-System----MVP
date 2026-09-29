@@ -10,3 +10,5 @@ export { KPICards } from './KPICards';
 export { Copilot } from './Copilot';
 export { AdminReview } from './AdminReview';
 export { EvidenceViewer } from './EvidenceViewer';
+export { AlertDetailModal } from './AlertDetailModal';
+export { CopilotChat } from './CopilotChat';

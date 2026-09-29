@@ -33,6 +33,8 @@ interface Props {
   initialDepth?: number;
   onDepthChange?: (depth: number) => void;
   onRiskChange?: (risk: CurrentRiskResponse) => void;
+  onOpenEvidence?: (docTitle: string, page: number, excerpt: string, wellName: string) => void;
+  onSelectAlert?: (alert: any) => void;
 }
 
 type RiskLevel = 'NORMAL' | 'WATCH' | 'CAUTION' | 'HIGH_EVIDENCE_RISK';
@@ -151,6 +153,8 @@ export const DepthCorrelationView: React.FC<Props> = ({
   initialDepth = 2600,
   onDepthChange,
   onRiskChange,
+  onOpenEvidence,
+  onSelectAlert,
 }) => {
   const minDepth = Math.max(0, (well?.total_depth_m ?? 4000) * 0.6 - 300);
   const maxDepth = well?.total_depth_m ?? 4000;
@@ -625,10 +629,24 @@ export const DepthCorrelationView: React.FC<Props> = ({
                       </td>
                       <td className="py-2.5 px-3 text-slate-400 text-[10px]">
                         {ev.source_doc ? (
-                          <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-700">
-                            📖 {ev.source_doc?.slice(0, 18)}{ev.source_doc?.length > 18 ? '…' : ''} p.{ev.page}
-                          </span>
-                        ) : '—'}
+                          <button
+                            onClick={() =>
+                              onOpenEvidence?.(
+                                ev.source_doc || '',
+                                ev.page || 1,
+                                ev.snippet || `Incident recorded in ${ev.well} at ${ev.depth}m`,
+                                ev.well
+                              )
+                            }
+                            className="bg-slate-950 hover:bg-cyan-950/60 text-cyan-300 hover:text-cyan-200 px-2.5 py-1 rounded border border-slate-700 hover:border-cyan-500/50 transition-colors flex items-center gap-1.5"
+                            title="Click to open page in Evidence Viewer"
+                          >
+                            <span>📖</span>
+                            <span>{ev.source_doc?.slice(0, 16)}… p.{ev.page}</span>
+                          </button>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   ))}

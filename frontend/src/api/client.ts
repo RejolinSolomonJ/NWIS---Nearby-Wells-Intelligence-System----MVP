@@ -76,6 +76,8 @@ export interface DrillingEvent {
   report_id?: string;
   page_number?: number;
   needs_review?: boolean;
+  raw_text_snippet?: string;
+  formation_name?: string;
   is_simulated?: boolean;
 }
 
