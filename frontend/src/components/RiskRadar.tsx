@@ -1,4 +1,5 @@
 import React from 'react';
+import { FileText, BookOpen } from 'lucide-react';
 import { RiskAssessment, Well } from '../api/client';
 
 interface Props {
@@ -137,14 +138,15 @@ export const RiskRadar: React.FC<Props> = ({ well, assessment, onSelectOffsetWel
       </div>
 
       {/* Deterministic Evidence Trail & Source Documents */}
-      <div className="mt-6">
-        <h4 className="text-sm font-bold font-mono text-slate-200 mb-3 flex items-center gap-2">
-          <span className="text-cyan-400">📋</span> Verifiable Evidence Trail &amp; Document Citations
+      <div className="mt-6 font-sans">
+        <h4 className="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-cyan-400" />
+          <span>Verifiable Evidence Trail &amp; Document Citations</span>
         </h4>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-950/80">
+              <tr className="border-b border-slate-800 text-slate-400 font-sans uppercase bg-slate-950/80 text-[10px] font-semibold tracking-wider">
                 <th className="py-2.5 px-3">Risk Factor</th>
                 <th className="py-2.5 px-3">Severity Score</th>
                 <th className="py-2.5 px-3">Verified Operational Evidence</th>
@@ -154,16 +156,17 @@ export const RiskRadar: React.FC<Props> = ({ well, assessment, onSelectOffsetWel
             <tbody className="divide-y divide-slate-800/60 font-sans">
               {assessment.risk_factors.map((factor: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="py-2.5 px-3 font-semibold text-slate-200 font-mono">{factor.factor}</td>
+                  <td className="py-2.5 px-3 font-semibold text-slate-200">{factor.factor}</td>
                   <td className="py-2.5 px-3">
-                    <span className={`px-2 py-0.5 rounded font-mono font-bold ${getScoreColor(factor.score)}`}>
+                    <span className={`px-2 py-0.5 rounded font-sans font-bold tabular-nums ${getScoreColor(factor.score)}`}>
                       {(factor.score * 100).toFixed(0)}%
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-slate-300 max-w-md">{factor.evidence}</td>
-                  <td className="py-2.5 px-3 text-cyan-300 font-mono text-[11px]">
-                    <span className="bg-slate-950 px-2 py-1 rounded border border-cyan-900/60 inline-block">
-                      📖 {factor.source}
+                  <td className="py-2.5 px-3 text-cyan-300 font-sans text-[11px]">
+                    <span className="bg-slate-950 px-2 py-1 rounded border border-cyan-900/60 inline-flex items-center gap-1.5 font-medium">
+                      <BookOpen className="w-3 h-3 text-cyan-400" />
+                      <span>{factor.source}</span>
                     </span>
                   </td>
                 </tr>

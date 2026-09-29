@@ -10,6 +10,14 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Scale,
+  BarChart3,
+  TrendingUp,
+  BookOpen,
+  ExternalLink,
+  X,
+} from 'lucide-react';
+import {
   ResponsiveContainer,
   LineChart,
   Line,
@@ -132,17 +140,17 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
   return (
     <div className="space-y-6">
       {/* ─── Header & Selectors ─── */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md font-sans">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-lg font-bold font-mono text-slate-100 flex items-center gap-2">
-              <span className="text-cyan-400">⚖️</span>
+            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <Scale className="w-5 h-5 text-cyan-400" />
               <span>SIDE-BY-SIDE OFFSET WELL COMPARATOR</span>
-              <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">
+              <span className="text-[10px] px-2 py-0.5 rounded font-sans bg-cyan-950 text-cyan-400 border border-cyan-800 font-semibold">
                 PHASE 5 ENGINE
               </span>
             </h2>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
+            <p className="text-xs text-slate-400 font-sans mt-0.5">
               Correlate stratigraphy, incident history, and drilling mechanics between active target and offset analogue.
             </p>
           </div>
@@ -150,9 +158,10 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+              className="text-xs font-sans px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1.5 font-medium"
             >
-              ✕ Back
+              <X className="w-3.5 h-3.5" />
+              <span>Back</span>
             </button>
           )}
         </div>
@@ -208,11 +217,11 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
       </div>
 
       {/* ─── Multi-Factor Similarity Index & Breakdown Bar Chart ─── */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl font-sans">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-800">
           <div>
-            <h3 className="text-sm font-bold font-mono text-slate-100 flex items-center gap-2">
-              <span className="text-cyan-400">📊</span>
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-cyan-400" />
               <span>PAIRWISE WELL SIMILARITY SCORE &amp; 5-FACTOR BREAKDOWN</span>
             </h3>
             <p className="text-[11px] text-slate-400 font-mono mt-0.5">
@@ -352,10 +361,10 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
       </div>
 
       {/* ─── Drilling Parameter Comparison Line Charts ─── */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl font-mono">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl font-sans">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
           <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-            <span className="text-cyan-400">📈</span>
+            <TrendingUp className="w-4 h-4 text-cyan-400" />
             <span>DRILLING PARAMETERS CORRELATION PROFILE (Depth vs Parameters)</span>
           </h3>
           <div className="flex items-center gap-4 text-xs">
@@ -402,7 +411,7 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
       </div>
 
       {/* ─── Side-by-Side Event Lists ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans text-xs">
         {/* Events Well A */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
@@ -420,7 +429,7 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40">
                       {ev.event_type?.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-amber-400 font-bold">{ev.depth_m}m</span>
+                    <span className="text-amber-400 font-bold tabular-nums">{ev.depth_m}m</span>
                   </div>
                   <p className="text-slate-300 text-[11px] leading-relaxed pt-1">{ev.description}</p>
                   {onOpenEvidence && (
@@ -433,9 +442,11 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
                           nameA
                         )
                       }
-                      className="text-[10px] text-cyan-400 hover:text-cyan-300 underline pt-1 block"
+                      className="text-[10px] text-cyan-400 hover:text-cyan-300 underline pt-1 flex items-center gap-1 font-medium"
                     >
-                      📖 View Cited Page {ev.page_number || 3} ↗
+                      <BookOpen className="w-3 h-3" />
+                      <span>View Cited Page {ev.page_number || 3}</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
                     </button>
                   )}
                 </div>
@@ -461,7 +472,7 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40">
                       {ev.event_type?.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-amber-400 font-bold">{ev.depth_m}m</span>
+                    <span className="text-amber-400 font-bold tabular-nums">{ev.depth_m}m</span>
                   </div>
                   <p className="text-slate-300 text-[11px] leading-relaxed pt-1">{ev.description}</p>
                   {onOpenEvidence && (
@@ -474,9 +485,11 @@ export const CompareWells: React.FC<CompareWellsProps> = ({
                           nameB
                         )
                       }
-                      className="text-[10px] text-purple-400 hover:text-purple-300 underline pt-1 block"
+                      className="text-[10px] text-purple-400 hover:text-purple-300 underline pt-1 flex items-center gap-1 font-medium"
                     >
-                      📖 View Cited Page {ev.page_number || 3} ↗
+                      <BookOpen className="w-3 h-3" />
+                      <span>View Cited Page {ev.page_number || 3}</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
                     </button>
                   )}
                 </div>

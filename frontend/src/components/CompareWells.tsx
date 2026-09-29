@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Scale, X } from 'lucide-react';
 import { Well, SimilarWell, findSimilarWells } from '../api/client';
 
 interface Props {
@@ -32,20 +33,22 @@ export const CompareWells: React.FC<Props> = ({ wells, initialWellA, onClose }) 
     <div className="bg-slate-900/95 border border-slate-800 rounded-xl p-6 shadow-2xl backdrop-blur-md">
       <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
         <div>
-          <h3 className="text-lg font-bold font-mono text-slate-100 flex items-center gap-2">
-            <span className="text-cyan-400">⚖️</span> Side-by-Side Offset Well Comparison
+          <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2 font-sans">
+            <Scale className="w-5 h-5 text-cyan-400" />
+            <span>Side-by-Side Offset Well Comparison</span>
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5 font-sans">
             Deterministic comparative scoring &amp; lithological correlation |{' '}
-            <span className="text-amber-400 font-mono">SIMULATED DATA</span>
+            <span className="text-amber-400 font-sans font-medium">SIMULATED DATA</span>
           </p>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 text-sm font-mono px-3 py-1 rounded bg-slate-800"
+            className="text-slate-400 hover:text-slate-200 text-xs font-sans px-3 py-1.5 rounded-lg bg-slate-800 flex items-center gap-1.5 font-medium transition-colors"
           >
-            ✕ Close
+            <X className="w-3.5 h-3.5" />
+            <span>Close</span>
           </button>
         )}
       </div>

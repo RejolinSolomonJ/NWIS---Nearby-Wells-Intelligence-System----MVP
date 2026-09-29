@@ -17,7 +17,7 @@ from app.schemas import HealthResponse, ErrorResponse
 
 app = FastAPI(
     title="NWIS-X Core API",
-    description="Nearby Wells Intelligence & Risk eXplorer — Geospatial & Depth-Aware API. ⚠️ SIMULATED DATA ONLY.",
+    description="Nearby Wells Intelligence & Risk eXplorer — Geospatial & Depth-Aware API. SIMULATED DATA ONLY.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -107,5 +107,5 @@ async def root():
         "docs": "/docs",
         "health": "/health",
         "wells_nearby": "/wells/nearby?lat=27.28&lon=95.34&radius_km=15",
-        "disclaimer": "⚠️ SIMULATED DATA — NOT OIL INDIA DATA",
+        "disclaimer": "SIMULATED DATA — NOT OIL INDIA DATA",
     }

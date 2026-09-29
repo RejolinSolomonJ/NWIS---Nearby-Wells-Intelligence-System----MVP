@@ -6,6 +6,17 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Shield,
+  FileText,
+  ScrollText,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCw,
+  Edit3,
+  Check,
+  Save,
+} from 'lucide-react';
+import {
   DrillingEvent,
   AuditLogEntry,
   getNeedsReviewEvents,
@@ -93,24 +104,24 @@ export const AdminReview: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md space-y-6 font-mono">
+    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md space-y-6 font-sans">
       {/* ─── Header ─── */}
       <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-800 gap-4">
         <div>
           <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <span className="text-cyan-400">🛡️</span>
+            <Shield className="w-5 h-5 text-cyan-400" />
             <span>ADMINISTRATIVE GOVERNANCE &amp; AUDIT TRAIL</span>
             <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-bold">
               ROLE: ADMIN
             </span>
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5 font-sans">
             Human-in-the-loop OCR verification, inline correction, and immutable compliance logs.
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs">
+        <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs font-sans">
           <button
             onClick={() => setActiveTab('ocr_queue')}
             className={`px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 font-bold ${
@@ -119,7 +130,8 @@ export const AdminReview: React.FC = () => {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>📝 OCR Review Queue</span>
+            <FileText className="w-3.5 h-3.5" />
+            <span>OCR Review Queue</span>
             <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-cyan-400">
               {reviewEvents.length}
             </span>
@@ -135,7 +147,8 @@ export const AdminReview: React.FC = () => {
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>📜 Security Audit Logs</span>
+            <ScrollText className="w-3.5 h-3.5" />
+            <span>Security Audit Logs</span>
             <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-purple-400">
               {auditLogs.length}
             </span>
@@ -144,8 +157,11 @@ export const AdminReview: React.FC = () => {
       </div>
 
       {saveSuccessMsg && (
-        <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs flex items-center justify-between">
-          <span>✓ {saveSuccessMsg}</span>
+        <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs flex items-center justify-between font-sans">
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{saveSuccessMsg}</span>
+          </span>
           <span className="text-[10px] text-emerald-400 font-bold uppercase">PERSISTED TO DB</span>
         </div>
       )}
@@ -153,25 +169,26 @@ export const AdminReview: React.FC = () => {
       {/* ─── TAB 1: Human-in-the-Loop OCR Review Queue (Phase 15 Feature 1) ─── */}
       {activeTab === 'ocr_queue' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="flex items-center justify-between text-xs text-slate-400 font-sans">
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
               <span>Low-Confidence Extracted Incidents Requiring Subject Matter Expert (SME) Verification</span>
             </span>
             <button
               onClick={fetchReviewQueue}
-              className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+              className="text-xs text-cyan-400 hover:text-cyan-300 underline flex items-center gap-1"
             >
-              ↻ Refresh Queue
+              <RotateCw className="w-3 h-3" />
+              <span>Refresh Queue</span>
             </button>
           </div>
 
           {loadingEvents ? (
-            <div className="py-12 text-center text-xs text-cyan-400">Loading review queue…</div>
+            <div className="py-12 text-center text-xs text-cyan-400 font-sans">Loading review queue…</div>
           ) : reviewEvents.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-500 bg-slate-950/50 rounded-xl border border-slate-800">
-              <span className="text-2xl block mb-2">✅</span>
-              All extracted incidents verified! Zero pending low-confidence items in queue.
+            <div className="py-12 text-center text-xs text-slate-400 bg-slate-950/50 rounded-xl border border-slate-800 font-sans flex flex-col items-center gap-2">
+              <CheckCircle2 className="w-8 h-8 text-emerald-400 mb-1" />
+              <span>All extracted incidents verified! Zero pending low-confidence items in queue.</span>
             </div>
           ) : (
             <div className="space-y-3">
@@ -182,12 +199,13 @@ export const AdminReview: React.FC = () => {
                 return (
                   <div
                     key={id}
-                    className="p-4 bg-slate-950 border border-slate-800 rounded-xl text-xs space-y-3 transition-colors hover:border-slate-700"
+                    className="p-4 bg-slate-950 border border-slate-800 rounded-xl text-xs space-y-3 transition-colors hover:border-slate-700 font-sans"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase">
-                          ⚠️ Needs SME Review
+                        <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3 text-amber-400" />
+                          <span>Needs SME Review</span>
                         </span>
                         <span className="text-cyan-400 font-bold">
                           Well ID: {ev.well_id?.slice(0, 8)}…
@@ -203,24 +221,27 @@ export const AdminReview: React.FC = () => {
                           <>
                             <button
                               onClick={() => handleStartEdit(ev)}
-                              className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold"
+                              className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5"
                             >
-                              ✏️ Edit Values
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit Values</span>
                             </button>
                             <button
                               onClick={() => handleSaveCorrection(id, true)}
-                              className="px-3 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold"
+                              className="px-3 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5"
                             >
-                              ✓ Approve Direct
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Approve Direct</span>
                             </button>
                           </>
                         ) : (
                           <>
                             <button
                               onClick={() => handleSaveCorrection(id, false)}
-                              className="px-3 py-1 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold"
+                              className="px-3 py-1 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5"
                             >
-                              💾 Save &amp; Persist
+                              <Save className="w-3.5 h-3.5" />
+                              <span>Save &amp; Persist</span>
                             </button>
                             <button
                               onClick={() => setEditingId(null)}

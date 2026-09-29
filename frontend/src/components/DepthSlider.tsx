@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Layers } from 'lucide-react';
 import { DrillingEvent } from '../api/client';
 
 interface Props {
@@ -38,8 +39,9 @@ export const DepthSlider: React.FC<Props> = ({
     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl backdrop-blur-md">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div>
-          <h3 className="text-sm font-bold font-mono text-slate-100 flex items-center gap-2">
-            <span className="text-cyan-400">📏</span> Depth-Aware Stratigraphic Slider
+          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2 font-sans">
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span>Depth-Aware Stratigraphic Slider</span>
           </h3>
           <p className="text-xs text-slate-400">
             Real-time depth window filtering incidents &amp; formation transitions |{' '}

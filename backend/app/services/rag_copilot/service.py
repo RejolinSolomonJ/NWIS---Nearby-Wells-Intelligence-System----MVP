@@ -111,7 +111,40 @@ class RAGCopilotService:
 
     def _generate_answer(self, prompt: str, question: str, evidence: List[Dict[str, Any]]) -> str:
         """Call external LLM if API key configured, otherwise use strict synthesis."""
-        # Check if external LLM is configured
+        # Check if Gemini LLM is configured
+        if self.gemini_key and len(self.gemini_key) > 10:
+            try:
+                import httpx
+                model_name = getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash") or "gemini-1.5-flash"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.gemini_key}"
+                payload = {
+                    "contents": [{
+                        "parts": [{
+                            "text": (
+                                "You are a drilling institutional memory expert for Oil India Limited. "
+                                "Answer strictly from the provided offset well evidence with mandatory [WellID, Document, Page] citations.\n\n"
+                                f"{prompt}"
+                            )
+                        }]
+                    }],
+                    "generationConfig": {
+                        "temperature": 0.1,
+                        "maxOutputTokens": 600,
+                    }
+                }
+                with httpx.Client(timeout=6.0) as client:
+                    resp = client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        candidates = data.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            if parts:
+                                return parts[0].get("text", "").strip()
+            except Exception:
+                pass
+
+        # Check if OpenAI LLM is configured
         if self.openai_key and self.openai_key.startswith("sk-") and "placeholder" not in self.openai_key:
             try:
                 import openai

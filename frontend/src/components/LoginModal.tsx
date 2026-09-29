@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { loginUser } from '../api/client';
+import { Lock, Shield, Activity, Eye, X, ArrowRight } from 'lucide-react';
 
 export interface UserProfile {
   username: string;
@@ -71,24 +72,26 @@ export const LoginModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn font-mono">
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn font-sans">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="text-xl">🔐</span>
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <Lock className="w-4 h-4" />
+            </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-slate-100 font-display">
                 Authentication &amp; RBAC Control
               </h3>
-              <p className="text-[11px] text-slate-400">Phase 14 — JWT Token &amp; Roles</p>
+              <p className="text-[11px] text-slate-400 font-sans">Security Credentials &amp; Role Permissions</p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-100 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -115,7 +118,7 @@ export const LoginModal: React.FC<Props> = ({
         <div className="p-6 space-y-5 text-xs">
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs">
-              ⚠️ {error}
+              <span className="font-bold text-rose-400 mr-1.5">ERROR:</span>{error}
             </div>
           )}
 
@@ -131,9 +134,9 @@ export const LoginModal: React.FC<Props> = ({
                 disabled={loading}
                 className="p-2.5 rounded-xl bg-slate-950 border border-rose-900/60 hover:border-rose-500/80 text-center transition-all group hover:scale-[1.02]"
               >
-                <div className="text-sm">🛡️</div>
-                <div className="font-bold text-rose-400 text-[11px] mt-0.5">Admin</div>
-                <div className="text-[9px] text-slate-500">Full Access</div>
+                <div className="flex justify-center text-rose-400 mb-1"><Shield className="w-4 h-4" /></div>
+                <div className="font-bold text-rose-400 text-[11px]">Admin</div>
+                <div className="text-[9px] text-slate-500">Superintendent</div>
               </button>
 
               <button
@@ -142,9 +145,9 @@ export const LoginModal: React.FC<Props> = ({
                 disabled={loading}
                 className="p-2.5 rounded-xl bg-slate-950 border border-cyan-900/60 hover:border-cyan-500/80 text-center transition-all group hover:scale-[1.02]"
               >
-                <div className="text-sm">⚙️</div>
-                <div className="font-bold text-cyan-400 text-[11px] mt-0.5">Engineer</div>
-                <div className="text-[9px] text-slate-500">Ops &amp; Review</div>
+                <div className="flex justify-center text-cyan-400 mb-1"><Activity className="w-4 h-4" /></div>
+                <div className="font-bold text-cyan-400 text-[11px]">Engineer</div>
+                <div className="text-[9px] text-slate-500">Drilling Ops</div>
               </button>
 
               <button
@@ -153,8 +156,8 @@ export const LoginModal: React.FC<Props> = ({
                 disabled={loading}
                 className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-600 text-center transition-all group hover:scale-[1.02]"
               >
-                <div className="text-sm">👁️</div>
-                <div className="font-bold text-slate-300 text-[11px] mt-0.5">Viewer</div>
+                <div className="flex justify-center text-slate-300 mb-1"><Eye className="w-4 h-4" /></div>
+                <div className="font-bold text-slate-300 text-[11px]">Viewer</div>
                 <div className="text-[9px] text-slate-500">Read-Only</div>
               </button>
             </div>
@@ -201,7 +204,7 @@ export const LoginModal: React.FC<Props> = ({
                 className="flex-1 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-1.5"
               >
                 <span>{loading ? 'Authenticating…' : 'Authenticate & Sign In'}</span>
-                <span>➔</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
               {currentUser.username !== 'viewer' && (
                 <button

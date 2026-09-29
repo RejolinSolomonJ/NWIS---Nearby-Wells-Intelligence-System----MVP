@@ -9,6 +9,17 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Database,
+  Search,
+  Sparkles,
+  BookOpen,
+  FileText,
+  Loader2,
+  ExternalLink,
+  RotateCcw,
+  ArrowRight,
+} from 'lucide-react';
+import {
   DrillingEvent,
   Well,
   getEvents,
@@ -23,22 +34,22 @@ export interface InstitutionalMemoryProps {
 
 const EVENT_TYPES = [
   { value: '', label: 'All Incident Types' },
+  { value: 'kick', label: 'Gas Kick / Well Control Influx' },
   { value: 'mud_loss', label: 'Mud Loss / Lost Circulation' },
   { value: 'stuck_pipe', label: 'Stuck Pipe / Differential Sticking' },
-  { value: 'gas_kick', label: 'Gas Kick / Well Control Influx' },
-  { value: 'tight_hole', label: 'Tight Hole / Overpull' },
-  { value: 'pack_off', label: 'Pack Off / Annular Bridging' },
-  { value: 'bit_balling', label: 'Bit Balling / ROP Drop' },
+  { value: 'pressure_anomaly', label: 'Standpipe Pressure Spike / Anomaly' },
+  { value: 'torque_anomaly', label: 'Rotary Torque Drag / Anomaly' },
+  { value: 'other', label: 'Other Drilling Incidents' },
 ];
 
 const FORMATIONS = [
   { value: '', label: 'All Formations' },
-  { value: 'Barail', label: 'Barail Coal-Shale (F3 Risk Zone)' },
-  { value: 'Tipam', label: 'Tipam Sandstone' },
-  { value: 'Bokabil', label: 'Bokabil Formation' },
-  { value: 'Kopili', label: 'Kopili Shale' },
-  { value: 'Girujan', label: 'Girujan Clay' },
-  { value: 'Sylhet', label: 'Sylhet Limestone' },
+  { value: 'Barail', label: 'Barail Coal-Shale Formation (F3)' },
+  { value: 'Tipam', label: 'Tipam Sandstone Formation' },
+  { value: 'Kopili', label: 'Kopili Shale Formation' },
+  { value: 'Sylhet', label: 'Sylhet Limestone Formation' },
+  { value: 'Dihing', label: 'Alluvium / Dihing Formation' },
+  { value: 'Basement', label: 'Basement Metamorphic Complex' },
 ];
 
 const SEVERITIES = [
@@ -166,27 +177,28 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold font-mono text-slate-100 flex items-center gap-2">
-              <span className="text-cyan-400">🏛️</span>
+            <h2 className="text-lg font-bold font-sans text-slate-100 flex items-center gap-2">
+              <Database className="w-5 h-5 text-cyan-400" />
               <span>INSTITUTIONAL MEMORY &amp; LESSONS LEARNED SEARCH</span>
-              <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">
+              <span className="text-[10px] px-2 py-0.5 rounded font-sans bg-cyan-950 text-cyan-400 border border-cyan-800 font-semibold">
                 SQL FILTER + RAG SEMANTIC
               </span>
             </h2>
-            <p className="text-xs text-slate-400 font-mono mt-1">
+            <p className="text-xs text-slate-400 font-sans mt-1">
               Deterministic historical query engine over verified offset well dossiers, mud logs, and end-of-well completion records.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-bold">
+            <span className="text-xs font-sans px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-bold">
               {events.length} MATCHING INCIDENTS
             </span>
             <button
               onClick={handleResetFilters}
-              className="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+              className="text-xs font-sans px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1.5 font-medium"
             >
-              ↺ Reset
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset</span>
             </button>
           </div>
         </div>
@@ -199,13 +211,13 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
               value={freeTextQuery}
               onChange={(e) => setFreeTextQuery(e.target.value)}
               placeholder="Fuzzy semantic search (e.g. 'stuck pipe in Formation F3 between 3000-3300m' or 'mud loss in Barail')..."
-              className="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl px-4 py-3 pl-11 text-xs font-mono text-slate-100 placeholder:text-slate-500 focus:outline-none transition-colors shadow-inner"
+              className="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl px-4 py-3 pl-11 text-xs font-sans text-slate-100 placeholder:text-slate-500 focus:outline-none transition-colors shadow-inner"
             />
-            <span className="absolute left-4 text-slate-500 text-sm">🔎</span>
+            <Search className="w-4 h-4 text-slate-500 absolute left-4" />
             <button
               type="submit"
               disabled={loading || !freeTextQuery.trim()}
-              className="absolute right-2 px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono transition-transform active:scale-95 disabled:opacity-50"
+              className="absolute right-2 px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-sans transition-transform active:scale-95 disabled:opacity-50"
             >
               {loading ? 'Searching…' : 'Semantic Search'}
             </button>
@@ -346,10 +358,10 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
               />
               <button
                 onClick={fetchStructuredEvents}
-                className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded-lg font-bold"
+                className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded-lg font-bold flex items-center justify-center"
                 title="Apply Depth Filters"
               >
-                ➔
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -358,12 +370,13 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
 
       {/* ─── Semantic Search Synthesis Banner (When active) ─── */}
       {searchMode === 'semantic' && semanticResult && (
-        <div className="bg-slate-900/90 border border-cyan-800/50 rounded-2xl p-5 shadow-xl font-mono text-xs space-y-3">
+        <div className="bg-slate-900/90 border border-cyan-800/50 rounded-2xl p-5 shadow-xl font-sans text-xs space-y-3">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <span className="text-cyan-400 font-bold flex items-center gap-2">
-              <span>🤖</span> SEMANTIC KNOWLEDGE SYNTHESIS &amp; CITATIONS
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span>SEMANTIC KNOWLEDGE SYNTHESIS &amp; CITATIONS</span>
             </span>
-            <span className="text-[10px] text-slate-500">Citation-Enforced RAG Result</span>
+            <span className="text-[10px] text-slate-500 font-medium">Citation-Enforced RAG Result</span>
           </div>
 
           <p className="text-slate-200 leading-relaxed text-sm bg-slate-950/80 p-4 rounded-xl border border-slate-800/80">
@@ -378,10 +391,11 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
                   <button
                     key={idx}
                     onClick={() => onOpenEvidence(c.doc, c.page, c.snippet, c.well)}
-                    className="px-3 py-1.5 rounded-lg bg-cyan-950 hover:bg-cyan-900/80 border border-cyan-800 text-cyan-300 text-xs flex items-center gap-2 transition-colors font-bold"
+                    className="px-3 py-1.5 rounded-lg bg-cyan-950 hover:bg-cyan-900/80 border border-cyan-800 text-cyan-300 text-xs flex items-center gap-2 transition-colors font-semibold"
                   >
-                    <span>📑 [{c.well} · {c.doc} · Page {c.page}]</span>
-                    <span className="text-[10px] text-cyan-400">↗</span>
+                    <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>[{c.well} · {c.doc} · Page {c.page}]</span>
+                    <ExternalLink className="w-3 h-3 text-cyan-400" />
                   </button>
                 ))}
               </div>
@@ -391,33 +405,33 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
       )}
 
       {/* ─── Results Table with Evidence Column (Phase 12 requirement) ─── */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden font-sans">
         <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-          <h3 className="text-sm font-bold font-mono text-slate-100 flex items-center gap-2">
-            <span className="text-cyan-400">📋</span>
+          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-cyan-400" />
             <span>FILTERED DRILLING EVENTS TABLE ({events.length} RECORDS)</span>
           </h3>
-          <span className="text-[11px] font-mono text-slate-500">
+          <span className="text-[11px] text-slate-500">
             Structured SQL Query on drilling_events
           </span>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-xs font-mono text-cyan-400">
-            <div className="animate-spin text-2xl mb-2">⏳</div>
-            Querying verified database records…
+          <div className="py-16 text-center text-xs text-cyan-400 flex flex-col items-center justify-center gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+            <span>Querying verified database records…</span>
           </div>
         ) : events.length === 0 ? (
-          <div className="py-16 text-center text-xs font-mono text-slate-500">
-            <div className="text-3xl mb-2">🔍</div>
-            No historical incidents found matching the specified filters.
-            <div className="mt-2 text-slate-600">Try widening the depth interval or clearing the formation filter.</div>
+          <div className="py-16 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+            <Search className="w-8 h-8 text-slate-600 mb-1" />
+            <span>No historical incidents found matching the specified filters.</span>
+            <div className="mt-1 text-slate-600">Try widening the depth interval or clearing the formation filter.</div>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-950/70 border-b border-slate-800 text-slate-500 font-mono uppercase text-[10px]">
+                <tr className="bg-slate-950/70 border-b border-slate-800 text-slate-400 uppercase text-[10px] font-semibold tracking-wider">
                   <th className="py-3 px-4">Well Code</th>
                   <th className="py-3 px-3">Depth (m)</th>
                   <th className="py-3 px-3">Formation</th>
@@ -427,7 +441,7 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
                   <th className="py-3 px-4 text-center">Verified Evidence</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-mono">
+              <tbody className="divide-y divide-slate-800/60 font-sans">
                 {events.map((ev, i) => {
                   const wName = wellMap.get(ev.well_id) || ev.well_id?.slice(0, 12) || 'DEMO-WELL';
                   const sevColor =
@@ -442,7 +456,7 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
                       <td className="py-3 px-4 font-bold text-cyan-400 whitespace-nowrap">
                         {wName}
                       </td>
-                      <td className="py-3 px-3 text-amber-400 font-bold whitespace-nowrap">
+                      <td className="py-3 px-3 text-amber-400 font-bold whitespace-nowrap tabular-nums">
                         {ev.depth_m} m
                       </td>
                       <td className="py-3 px-3 text-slate-300 whitespace-nowrap">
@@ -469,12 +483,12 @@ export const InstitutionalMemory: React.FC<InstitutionalMemoryProps> = ({
                             const excerpt = ev.raw_text_snippet || ev.description;
                             onOpenEvidence(doc, page, excerpt, wName);
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 text-[11px] font-bold flex items-center gap-1.5 mx-auto transition-colors"
+                          className="px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 text-[11px] font-semibold flex items-center gap-1.5 mx-auto transition-colors"
                           title="Open Page in Archival PDF Viewer"
                         >
-                          <span>📖</span>
+                          <BookOpen className="w-3.5 h-3.5" />
                           <span>Page {ev.page_number || 3}</span>
-                          <span>↗</span>
+                          <ExternalLink className="w-3 h-3" />
                         </button>
                       </td>
                     </tr>

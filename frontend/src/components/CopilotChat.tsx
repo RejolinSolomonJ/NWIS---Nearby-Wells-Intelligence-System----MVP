@@ -9,6 +9,16 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import {
+  Bot,
+  Zap,
+  RotateCcw,
+  Info,
+  FileText,
+  ExternalLink,
+  Loader2,
+  ArrowRight,
+} from 'lucide-react';
 import { Well, queryCopilot, CopilotCitation, CopilotQueryResponse } from '../api/client';
 
 export interface CopilotChatProps {
@@ -66,7 +76,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       id: 'welcome-1',
       sender: 'assistant',
       text:
-        '👋 Welcome to the **NWIS-X Drilling Institutional Memory Copilot**.\n\nI answer queries strictly based on verified offset well records, deterministic risk calculations, and completion reports from the Assam-Arakan Basin. **I never invent facts** — every single factual claim is enforced with a clickable source citation.\n\nAsk a question or click one of the preset demo buttons below:',
+        'Welcome to the **NWIS-X Drilling Institutional Memory Copilot**.\n\nI answer queries strictly based on verified offset well records, deterministic risk calculations, and completion reports from the Assam-Arakan Basin. **I never invent facts** — every single factual claim is enforced with a clickable source citation.\n\nAsk a question or click one of the preset demo buttons below:',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -122,7 +132,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
         id: `err-${Date.now()}`,
         sender: 'assistant',
         text:
-          '⚠️ Unable to retrieve evidence from backend copilot service. Ensure FastAPI backend is running on port 8000.',
+          'Unable to retrieve evidence from backend copilot service. Ensure FastAPI backend is running on port 8000.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -132,16 +142,16 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl flex flex-col h-[740px] shadow-2xl backdrop-blur-md overflow-hidden font-mono">
+    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl flex flex-col h-[740px] shadow-2xl backdrop-blur-md overflow-hidden font-sans">
       {/* ─── Header ─── */}
       <div className="p-4 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-base">
-            🤖
+          <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+            <Bot className="w-5 h-5 text-cyan-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-100 uppercase">
+              <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wide">
                 Drilling Institutional Memory Copilot
               </h3>
               <span className="px-2 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 font-bold">
@@ -187,17 +197,17 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
                 },
               ])
             }
-            className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs ml-1"
+            className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs ml-1 flex items-center gap-1"
             title="Clear Chat History"
           >
-            ↺
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {/* ─── Suggested Preset Questions Strip (Phase 13 requirement) ─── */}
       <div className="bg-slate-950/70 border-b border-slate-800/80 px-4 py-2.5 flex items-center gap-2 overflow-x-auto shrink-0">
-        <span className="text-[10px] text-slate-500 font-bold uppercase shrink-0">
+        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
           Demo Presets:
         </span>
         <div className="flex items-center gap-2">
@@ -208,7 +218,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
               disabled={loading}
               className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-cyan-950/60 border border-slate-700/80 hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 text-[11px] whitespace-nowrap transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             >
-              <span className="text-cyan-400 font-bold">⚡</span>
+              <Zap className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
               <span>{pq.title}</span>
               <span className="text-[9px] px-1 py-0.2 bg-slate-800 text-slate-400 rounded">
                 {pq.tag}
@@ -244,7 +254,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
                 /* Distinct Neutral-Styled Message for Insufficient Evidence (Phase 13 requirement) */
                 <div className="bg-slate-900 border border-blue-500/40 text-slate-200 rounded-2xl p-4 shadow-lg text-xs leading-relaxed space-y-2">
                   <div className="flex items-center gap-2 text-cyan-400 font-bold text-[11px]">
-                    <span>ℹ️</span>
+                    <Info className="w-4 h-4 text-cyan-400 shrink-0" />
                     <span>OUT-OF-SCOPE / INSUFFICIENT EVIDENCE ADVISORY</span>
                   </div>
                   <p className="text-slate-300">{m.text}</p>
@@ -278,8 +288,9 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
                             className="px-3 py-1.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-800 text-cyan-300 hover:text-cyan-200 text-[11px] font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-sm"
                             title={`Open ${c.doc} at Page ${c.page}`}
                           >
-                            <span>📑 [{c.well} · {c.doc} · Page {c.page}]</span>
-                            <span className="text-cyan-400 text-xs">↗</span>
+                            <FileText className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                            <span>[{c.well} · {c.doc} · Page {c.page}]</span>
+                            <ExternalLink className="w-3 h-3 text-cyan-400" />
                           </button>
                         ))}
                       </div>
@@ -294,7 +305,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
         {/* Loading Indicator */}
         {loading && (
           <div className="flex items-center gap-3 text-cyan-400 text-xs bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl w-fit">
-            <span className="animate-spin text-lg">⏳</span>
+            <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
             <span>Synthesizing verified offset evidence &amp; enforcing citations…</span>
           </div>
         )}
@@ -324,7 +335,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-transform active:scale-95"
         >
           <span>Ask</span>
-          <span>➔</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </form>
     </div>

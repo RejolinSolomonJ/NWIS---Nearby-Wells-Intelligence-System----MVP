@@ -2,7 +2,7 @@
   "app_name": "NWIS-X",
   "tagline": "Nearby Wells Intelligence & Risk eXplorer",
   "oil_india_banner": "SIH26121 — Oil India Ltd Depth-Aware Institutional Memory",
-  "simulated_data_disclaimer": "⚠️ SIMULATED DATA — NOT OIL INDIA PROPRIETARY DATA",
+  "simulated_data_disclaimer": "SIMULATED DATA — NOT OIL INDIA PROPRIETARY DATA",
   "status_connected": "Connected",
   "status_connecting": "Connecting...",
   "status_offline": "Offline Mode",

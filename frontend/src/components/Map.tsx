@@ -225,21 +225,21 @@ export const Map: React.FC<Props> = ({
             <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-800">
               <button
                 onClick={() => onOpenCopilot(selectedWell)}
-                className="px-2.5 py-1.5 bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs font-mono transition-all text-center"
+                className="px-2.5 py-1.5 bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs font-sans font-medium transition-all text-center"
               >
-                🤖 Ask Copilot
+                Ask Copilot
               </button>
               <button
                 onClick={() => onOpenCompare(selectedWell)}
-                className="px-2.5 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-300 rounded-lg text-xs font-mono transition-all text-center"
+                className="px-2.5 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-300 rounded-lg text-xs font-sans font-medium transition-all text-center"
               >
-                ⚖️ Compare
+                Compare
               </button>
               <button
                 onClick={() => onDownloadReport(selectedWell)}
-                className="px-2.5 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-mono transition-all text-center"
+                className="px-2.5 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-sans font-medium transition-all text-center"
               >
-                📄 PDF Report
+                PDF Report
               </button>
             </div>
           </div>

@@ -517,7 +517,7 @@ export async function getCurrentRisk(
       : 'Nominal baseline risk.',
     evidence_ids: [],
     corroborating_wells_count: 2,
-    disclaimer: '⚠️ SIMULATED DATA — NOT OIL INDIA DATA',
+    disclaimer: 'SIMULATED DATA — NOT OIL INDIA DATA',
   };
 }
 
@@ -627,7 +627,7 @@ export async function queryCopilot(question: string, wellId?: string): Promise<C
       { well: 'DEMO-WELL-101', doc: 'Daily Drilling Report — DEMO-WELL-101', page: 3, snippet: 'Severe mud loss of 120 bbl/hr in Barail Coal-Shale (F3) at 2752.4m.' },
       { well: 'DEMO-WELL-103', doc: 'Daily Drilling Report — DEMO-WELL-103', page: 3, snippet: 'Sudden mud loss of 95 bbl/hr in Barail Coal-Shale (F3) at 2758.2m.' },
     ],
-    disclaimer: '⚠️ SIMULATED DATA — NOT OIL INDIA DATA',
+    disclaimer: 'SIMULATED DATA — NOT OIL INDIA DATA',
   };
 }
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BookOpen } from 'lucide-react';
 import { Well, askCopilot, CopilotResponse } from '../api/client';
 
 interface Props {
@@ -19,7 +20,7 @@ export const Copilot: React.FC<Props> = ({ wells, selectedWell, onSelectWell }) 
     {
       role: 'assistant',
       content:
-        '👋 Welcome to the **NWIS-X Drilling Institutional Memory Copilot**.\n\nI answer queries strictly based on verified offset well records, deterministic risk calculations, and completion reports from the Assam-Arakan Basin. **I never invent facts** — all scores and metrics come from deterministic algorithms.\n\nSelect a well and ask a question, or try one of the suggested prompts below.',
+        'Welcome to the **NWIS-X Drilling Institutional Memory Copilot**.\n\nI answer queries strictly based on verified offset well records, deterministic risk calculations, and completion reports from the Assam-Arakan Basin. **I never invent facts** — all scores and metrics come from deterministic algorithms.\n\nSelect a well and ask a question, or try one of the suggested prompts below.',
     },
   ]);
   const [query, setQuery] = useState('');
@@ -56,7 +57,7 @@ export const Copilot: React.FC<Props> = ({ wells, selectedWell, onSelectWell }) 
         ...newMessages,
         {
           role: 'assistant',
-          content: '⚠️ Failed to connect to copilot service. Please try again.',
+          content: 'Failed to connect to copilot service. Please try again.',
         },
       ]);
     } finally {
@@ -129,7 +130,7 @@ export const Copilot: React.FC<Props> = ({ wells, selectedWell, onSelectWell }) 
               {m.citations && m.citations.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-slate-800">
                   <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase mb-2 flex items-center gap-1.5">
-                    <span>📖</span> Verified Archival Citations ({m.citations.length}):
+                    <BookOpen className="w-3.5 h-3.5 text-cyan-400" /> Verified Archival Citations ({m.citations.length}):
                   </div>
                   <div className="space-y-1.5">
                     {m.citations.map((c: any, cIdx: number) => (

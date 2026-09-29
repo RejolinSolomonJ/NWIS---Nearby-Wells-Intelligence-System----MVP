@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Network, X } from 'lucide-react';
 import { Alert } from '../api/client';
 
 interface Node {
@@ -51,7 +52,7 @@ export const ExplainabilityGraph: React.FC<Props> = ({ alert }) => {
       x: 70,
       y: 110,
       detail: `Offset Well Reference (Corroborating cluster member at ${(alert.depth_m || 2750)}m)`,
-      icon: '🛢️',
+      icon: 'WELL',
     },
     {
       id: 'formation',
@@ -61,7 +62,7 @@ export const ExplainabilityGraph: React.FC<Props> = ({ alert }) => {
       x: 210,
       y: 60,
       detail: `Geological Formation Horizon (Target Interval ±15m)`,
-      icon: '🏔️',
+      icon: 'GEO',
     },
     {
       id: 'event',
@@ -71,7 +72,7 @@ export const ExplainabilityGraph: React.FC<Props> = ({ alert }) => {
       x: 350,
       y: 110,
       detail: `Historical Incident Recorded: ${eventType} at ${(alert.depth_m || 2750)}m`,
-      icon: '⚠️',
+      icon: 'RISK',
     },
     {
       id: 'mitigation',
@@ -81,7 +82,7 @@ export const ExplainabilityGraph: React.FC<Props> = ({ alert }) => {
       x: 480,
       y: 60,
       detail: mitigation,
-      icon: '🛡️',
+      icon: 'SOP',
     },
     {
       id: 'report',
@@ -91,7 +92,7 @@ export const ExplainabilityGraph: React.FC<Props> = ({ alert }) => {
       x: 420,
       y: 170,
       detail: `${reportDoc} (Page ${alert.source_page || 3})`,
-      icon: '📑',
+      icon: 'DOC',
     },
   ];
 
@@ -106,15 +107,15 @@ export const ExplainabilityGraph: React.FC<Props> = ({ alert }) => {
   const getNode = (id: string) => nodes.find((n) => n.id === id);
 
   return (
-    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono">
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-sans">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm">🕸️</span>
-          <span className="text-cyan-400 font-bold uppercase text-[11px] tracking-wider">
+          <Network className="w-4 h-4 text-cyan-400" />
+          <span className="text-cyan-400 font-bold uppercase text-[11px] tracking-wider font-sans">
             Explainability Knowledge Graph (Relational View)
           </span>
         </div>
-        <span className="text-[10px] text-slate-500">
+        <span className="text-[10px] text-slate-500 font-sans">
           Click any entity node for contextual traversal
         </span>
       </div>
@@ -264,16 +265,16 @@ export const ExplainabilityGraph: React.FC<Props> = ({ alert }) => {
                 e.stopPropagation();
                 setSelectedNode(null);
               }}
-              className="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded bg-slate-800 ml-3"
+              className="text-slate-400 hover:text-slate-200 p-1 rounded bg-slate-800 ml-3"
             >
-              ✕
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
       </div>
 
       <div className="flex items-center justify-between mt-2 text-[10px] text-slate-500">
-        <span>Path: Well ➔ Formation ➔ Event ➔ Mitigation ➔ Report</span>
+        <span>Path: Well → Formation → Event → Mitigation → Report</span>
         <span className="text-cyan-400">Zero Graph-DB overhead · Dynamic view over relational entities</span>
       </div>
     </div>

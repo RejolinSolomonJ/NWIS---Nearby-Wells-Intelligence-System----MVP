@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { FileText, Search, Loader2, AlertCircle, X } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
 // Configure PDF.js worker
@@ -67,19 +68,19 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
   return (
     <div className="bg-slate-900 border border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl flex flex-col max-h-[88vh]">
       {/* ─── Header ─── */}
-      <div className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+      <div className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex items-center justify-between font-sans">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-lg">
-            📑
+          <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+            <FileText className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold font-mono text-slate-100 flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <span>ARCHIVAL EVIDENCE &amp; OCR CITATION VIEWER</span>
-              <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">
+              <span className="text-[10px] px-2 py-0.5 rounded font-sans bg-cyan-950 text-cyan-400 border border-cyan-800 font-semibold">
                 VERIFIED SOURCE
               </span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5 font-mono">
+            <p className="text-xs text-slate-400 mt-0.5 font-sans">
               Deterministic Citation Proof | OIL Archival Drilling Records
             </p>
           </div>
@@ -87,7 +88,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
         <div className="flex items-center gap-2">
           {/* View Mode Toggle */}
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-0.5 flex text-xs font-mono">
+          <div className="bg-slate-900 border border-slate-800 rounded-lg p-0.5 flex text-xs font-sans">
             <button
               onClick={() => setActiveTab('pdf')}
               className={`px-3 py-1 rounded transition-colors ${
@@ -109,9 +110,10 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-100 text-sm font-mono px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors ml-2"
+              className="text-slate-400 hover:text-slate-100 text-xs font-sans px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors ml-2 flex items-center gap-1.5 font-medium"
             >
-              ✕ Close
+              <X className="w-3.5 h-3.5" />
+              <span>Close</span>
             </button>
           )}
         </div>
@@ -172,21 +174,21 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
       </div>
 
       {/* ─── Evidence Highlight Bar (Always Visible) ─── */}
-      <div className="bg-amber-950/30 border-b border-amber-600/30 px-6 py-3 flex items-start gap-3">
-        <span className="text-amber-400 text-lg shrink-0 mt-0.5">🔍</span>
-        <div className="flex-1 font-mono text-xs">
+      <div className="bg-amber-950/30 border-b border-amber-600/30 px-6 py-3 flex items-start gap-3 font-sans">
+        <Search className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <div className="flex-1 text-xs">
           <div className="flex items-center justify-between text-amber-400 font-bold mb-1">
             <span>CITED EVIDENCE SNIPPET — MATCHED AT PAGE {pageNumber}</span>
-            <span className="text-[10px] text-amber-500 font-normal">EXACT ARCHIVAL MATCH</span>
+            <span className="text-[10px] text-amber-500 font-medium">EXACT ARCHIVAL MATCH</span>
           </div>
-          <div className="bg-slate-950/80 p-2.5 rounded-lg border border-amber-500/30 text-amber-200 leading-relaxed">
+          <div className="bg-slate-950/80 p-2.5 rounded-lg border border-amber-500/30 text-amber-200 leading-relaxed font-sans">
             &ldquo;{excerpt}&rdquo;
           </div>
         </div>
       </div>
 
       {/* ─── Main Content Body ─── */}
-      <div className="p-6 overflow-y-auto flex-1 bg-slate-950/70">
+      <div className="p-6 overflow-y-auto flex-1 bg-slate-950/70 font-sans">
         {activeTab === 'pdf' && !pdfLoadError ? (
           <div className="flex flex-col items-center justify-center min-h-[360px] relative">
             <Document
@@ -194,17 +196,18 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
               loading={
-                <div className="text-center font-mono text-xs text-cyan-400 py-12">
-                  <div className="animate-spin text-2xl mb-2">⏳</div>
-                  Loading Archival PDF from {resolvedPdfUrl}...
+                <div className="text-center text-xs text-cyan-400 py-12 flex flex-col items-center gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+                  <span>Loading Archival PDF from {resolvedPdfUrl}...</span>
                 </div>
               }
               error={
-                <div className="text-center font-mono text-xs text-amber-400 py-10">
-                  <p className="mb-2">⚠️ PDF document preview rendered in archival transcript mode.</p>
+                <div className="text-center text-xs text-amber-400 py-10 flex flex-col items-center gap-2">
+                  <AlertCircle className="w-6 h-6 text-amber-400" />
+                  <p className="mb-2">PDF document preview rendered in archival transcript mode.</p>
                   <button
                     onClick={() => setActiveTab('text')}
-                    className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 rounded font-bold"
+                    className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 rounded font-semibold"
                   >
                     Switch to Transcript View
                   </button>
