@@ -17,6 +17,7 @@ import hi from './i18n/hi.json';
 
 import { Dashboard } from './components/Dashboard';
 import { Map } from './components/Map';
+import { WellMap } from './components/WellMap';
 import { RiskRadar } from './components/RiskRadar';
 import { CompareWells } from './components/CompareWells';
 import { AlertCard } from './components/AlertCard';
@@ -296,9 +297,10 @@ export default function App() {
           )}
 
           {activeTab === 'map' && (
-            <Map
+            <WellMap
               wells={wells}
               selectedWell={selectedWell}
+              currentRiskLevel={currentRisk?.risk_level}
               onSelectWell={setSelectedWell}
               onOpenCopilot={(w) => {
                 setSelectedWell(w);
@@ -308,7 +310,6 @@ export default function App() {
                 setSelectedWell(w);
                 setActiveTab('compare');
               }}
-              onDownloadReport={() => {}}
             />
           )}
 
