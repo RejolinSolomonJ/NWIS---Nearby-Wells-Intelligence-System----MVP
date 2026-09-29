@@ -203,8 +203,10 @@ def test_reports_upload_and_process_endpoints():
     app.dependency_overrides[get_db] = mock_get_db
 
     try:
-        # 1. Upload report
-        response = client.post(
+        from app.core.security import create_access_token
+
+        # Verify unauthenticated upload is rejected with 401 (Phase 14 Acceptance Check)
+        unauth_resp = client.post(
             "/reports/upload",
             data={
                 "well_id": SAMPLE_WELL["well_id"],
@@ -214,14 +216,32 @@ def test_reports_upload_and_process_endpoints():
                 "file": (SAMPLE_PDF_NAME, io.BytesIO(pdf_bytes), "application/pdf")
             }
         )
+        assert unauth_resp.status_code == 401
+
+        # Authenticate with admin token
+        token = create_access_token({"sub": "admin", "role": "admin"})
+        auth_headers = {"Authorization": f"Bearer {token}"}
+
+        # 1. Upload report (authenticated)
+        response = client.post(
+            "/reports/upload",
+            data={
+                "well_id": SAMPLE_WELL["well_id"],
+                "report_type": "Daily Drilling Report",
+            },
+            files={
+                "file": (SAMPLE_PDF_NAME, io.BytesIO(pdf_bytes), "application/pdf")
+            },
+            headers=auth_headers,
+        )
         assert response.status_code == 201
         upload_json = response.json()
         assert "report_id" in upload_json
         assert upload_json["well_id"] == SAMPLE_WELL["well_id"]
 
-        # 2. Process report
+        # 2. Process report (authenticated)
         report_id = upload_json["report_id"]
-        proc_response = client.post(f"/reports/{report_id}/process")
+        proc_response = client.post(f"/reports/{report_id}/process", headers=auth_headers)
         assert proc_response.status_code == 200
         proc_json = proc_response.json()
 

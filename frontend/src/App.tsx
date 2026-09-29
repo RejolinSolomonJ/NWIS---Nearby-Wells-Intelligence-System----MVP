@@ -26,6 +26,7 @@ import { DepthSlider } from './components/DepthSlider';
 import { DepthCorrelationView } from './components/DepthCorrelationView';
 import { AlertDetailModal } from './components/AlertDetailModal';
 import { CopilotChat } from './components/CopilotChat';
+import { LoginModal, UserProfile } from './components/LoginModal';
 import { InstitutionalMemory, CompareWells } from './pages';
 
 type NavTab =
@@ -49,6 +50,14 @@ export default function App() {
   const [currentRisk, setCurrentRisk] = useState<CurrentRiskResponse | null>(null);
   const [events, setEvents] = useState<DrillingEvent[]>([]);
   const [currentDepth, setCurrentDepth] = useState<number>(2740.0);
+
+  // Phase 14: User Authentication & Role State
+  const [currentUser, setCurrentUser] = useState<UserProfile>({
+    username: 'admin',
+    role: 'admin',
+    full_name: 'Chief Operations Lead',
+  });
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
 
   // Alert explainability modal state
   const [selectedAlertForDetail, setSelectedAlertForDetail] = useState<Alert | null>(null);
@@ -176,8 +185,29 @@ export default function App() {
             </div>
           )}
 
-          {/* Right Controls: i18n & Health Beacon */}
-          <div className="flex items-center gap-3">
+          {/* Right Controls: User Profile/Role, Language & Health Beacon */}
+          <div className="flex items-center gap-2.5">
+            {/* Phase 14: User Profile & Role Indicator */}
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-xs font-mono text-slate-200 transition-all flex items-center gap-2 shadow-sm"
+              title="Click to Switch User / Role"
+            >
+              <span>{currentUser.role === 'admin' ? '🛡️' : currentUser.role === 'engineer' ? '⚙️' : '👁️'}</span>
+              <span className="font-bold text-slate-100 hidden sm:inline">{currentUser.username}</span>
+              <span
+                className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase border ${
+                  currentUser.role === 'admin'
+                    ? 'bg-rose-950 text-rose-300 border-rose-800'
+                    : currentUser.role === 'engineer'
+                    ? 'bg-cyan-950 text-cyan-300 border-cyan-800'
+                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                }`}
+              >
+                {currentUser.role}
+              </span>
+            </button>
+
             {/* Language Toggle */}
             <button
               onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
@@ -188,7 +218,7 @@ export default function App() {
               <span className="font-bold">{lang === 'en' ? 'हिन्दी (HI)' : 'ENGLISH (EN)'}</span>
             </button>
 
-            {/* Health Status Indicator (Acceptance Check Requirement) */}
+            {/* Health Status Indicator */}
             <div
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono border transition-all ${
                 health?.status === 'healthy' || health?.status === 'degraded'
@@ -238,6 +268,11 @@ export default function App() {
                 {item.id === 'institutional_memory' && alerts.length > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
                     {alerts.length}
+                  </span>
+                )}
+                {item.id === 'admin' && currentUser.role === 'admin' && (
+                  <span className="px-1.5 py-0.2 rounded text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">
+                    SEC
                   </span>
                 )}
               </button>
@@ -370,7 +405,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* 4. Alert Explainability Modal (Phase 11) */}
+      {/* 4. Alert Explainability Modal (Phase 11 & Phase 15 Feature 4) */}
       <AlertDetailModal
         alert={selectedAlertForDetail}
         isOpen={!!selectedAlertForDetail}
@@ -393,7 +428,22 @@ export default function App() {
         </div>
       )}
 
-      {/* 5. Footer */}
+      {/* 6. User Authentication Modal (Phase 14) */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        currentUser={currentUser}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={(u) => setCurrentUser(u)}
+        onLogout={() =>
+          setCurrentUser({
+            username: 'viewer',
+            role: 'read_only',
+            full_name: 'Field Observer',
+          })
+        }
+      />
+
+      {/* 7. Footer */}
       <footer className="border-t border-slate-800/80 py-3.5 px-6 text-center text-xs font-mono text-slate-500 bg-slate-950">
         NWIS-X © 2026 SIH26121 — Oil India Ltd · Verified PostGIS + pgvector · ⚠️ SIMULATED DATA ONLY
       </footer>

@@ -283,12 +283,28 @@ async def list_alerts(
     if severity:
         alerts = [a for a in alerts if a.severity.lower() == severity.lower()]
 
+    from app.core.auth_deps import log_audit_event
+    log_audit_event(
+        username="engineer",
+        role="engineer",
+        action="ALERT_VIEW",
+        entity="RISK_ALERT",
+        details=f"Viewed {len(alerts[:limit])} active early warning alerts",
+    )
     return alerts[:limit]
 
 
 @router.patch("/alerts/{alert_id}/acknowledge")
 async def acknowledge_alert(alert_id: UUID):
     """Acknowledge an alert."""
+    from app.core.auth_deps import log_audit_event
+    log_audit_event(
+        username="engineer",
+        role="engineer",
+        action="ALERT_ACKNOWLEDGE",
+        entity="RISK_ALERT",
+        details=f"Alert {alert_id} acknowledged by drilling engineer",
+    )
     return {
         "status": "acknowledged",
         "alert_id": str(alert_id),

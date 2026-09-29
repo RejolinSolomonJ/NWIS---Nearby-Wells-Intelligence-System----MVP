@@ -1,66 +1,85 @@
-version: "3.8"
+# NWIS-X Docker Compose — SIH26121 (Oil India Ltd)
+# Full-stack: PostGIS + pgvector | FastAPI Backend | React Frontend
+#
+# Usage:
+#   docker compose up --build        # Build & start all services
+#   docker compose up -d             # Detached mode
+#   docker compose down -v           # Tear down with volumes
+
+version: "3.9"
 
 services:
-  # ─── PostgreSQL 15 + PostGIS + pgvector (Single DB Service) ───
+  # ─── PostGIS + pgvector Database ───
   db:
-    build:
-      context: ./database
-      dockerfile: Dockerfile
-    image: postgres:15-postgis-vector
-    container_name: nwis-x-db
+    image: pgvector/pgvector:pg16
+    container_name: nwis-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-nwis}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nwis_secret_change_me}
-      POSTGRES_DB: ${POSTGRES_DB:-nwis_x}
+      POSTGRES_DB: nwis_x
+      POSTGRES_USER: nwis_admin
+      POSTGRES_PASSWORD: nwis_secure_2026
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nwis} -d ${POSTGRES_DB:-nwis_x}"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U nwis_admin -d nwis_x"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─── FastAPI Core Backend ───
+  # ─── FastAPI Backend ───
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: nwis-x-backend
+    container_name: nwis-backend
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-nwis}:${POSTGRES_PASSWORD:-nwis_secret_change_me}@db:5432/${POSTGRES_DB:-nwis_x}
-      SECRET_KEY: ${SECRET_KEY:-nwis_super_secret_jwt_key_sih26121_oil_india}
+      DATABASE_URL: postgresql+asyncpg://nwis_admin:nwis_secure_2026@db:5432/nwis_x
+      SECRET_KEY: nwis-x-sih26121-secret-key-oil-india-2026
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 480
+      CORS_ORIGINS: "http://localhost:5173,http://localhost:80,http://frontend:80"
+      # LLM Configuration (optional — falls back to deterministic mode)
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      OLLAMA_URL: "${OLLAMA_URL:-http://host.docker.internal:11434}"
+      LLM_TIMEOUT_SECONDS: "3.0"
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
-      - ./synthetic_data:/synthetic_data:ro
+      - ./backend/synthetic_data:/app/synthetic_data:ro
+      - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
-  # ─── React + Vite Frontend ───
+  # ─── React Frontend (Vite build → nginx) ───
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: nwis-x-frontend
+    container_name: nwis-frontend
     restart: unless-stopped
     depends_on:
-      - backend
-    environment:
-      VITE_API_URL: http://localhost:8000
+      backend:
+        condition: service_healthy
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - "5173:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   pgdata:
+    driver: local
+  uploads:
     driver: local

@@ -58,6 +58,14 @@ async def query_copilot(
     5. Returns { answer, citations: [{well, doc, page, snippet}] }.
     """
     result = rag_service.answer_query(body.question)
+    from app.core.auth_deps import log_audit_event
+    log_audit_event(
+        username="engineer",
+        role="engineer",
+        action="COPILOT_QUERY",
+        entity="COPILOT",
+        details=f"Question: {body.question[:100]}",
+    )
     return CopilotQueryResponse(
         answer=result["answer"],
         citations=result["citations"],

@@ -124,6 +124,7 @@ class RAGCopilotService:
                     ],
                     temperature=0.0,
                     max_tokens=500,
+                    timeout=3.0,
                 )
                 return resp.choices[0].message.content.strip()
             except Exception:

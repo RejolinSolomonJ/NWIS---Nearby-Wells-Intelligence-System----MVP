@@ -16,6 +16,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Alert, getSimilarWells, WellSimilarity, SimilarityBreakdown } from '../api/client';
+import { ExplainabilityGraph } from './ExplainabilityGraph';
 
 export interface AlertDetailModalProps {
   alert: Alert | null;
@@ -213,6 +214,9 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Phase 15 Wow Feature 4: MINI EXPLAINABILITY GRAPH (Well -> Formation -> Event -> Mitigation -> Report) */}
+          <ExplainabilityGraph alert={alert} />
 
           {/* Point 6: EVIDENCE SNIPPET */}
           <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4">

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.auth_deps import require_role, log_audit_event
 from app.models import Report, Well
 from app.schemas import ReportCreate, ReportResponse
 
@@ -22,6 +23,7 @@ async def upload_report(
     well_id: UUID = Form(..., description="Target Well UUID"),
     report_type: str = Form("Daily Drilling Report", description="Type of report"),
     file: UploadFile = File(..., description="PDF or document file to upload"),
+    current_user: dict = Depends(require_role(["admin", "engineer"])),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -52,6 +54,14 @@ async def upload_report(
     db.add(new_report)
     await db.flush()
     await db.refresh(new_report)
+
+    log_audit_event(
+        username=current_user.get("username", "anonymous"),
+        role=current_user.get("role", "engineer"),
+        action="REPORT_UPLOAD",
+        entity="REPORT",
+        details=f"Uploaded {file.filename} ({report_type}) for well {well_id}",
+    )
 
     return new_report
 
@@ -121,6 +131,7 @@ async def delete_report(report_id: UUID, db: AsyncSession = Depends(get_db)):
 @router.post("/{report_id}/process")
 async def process_report(
     report_id: UUID,
+    current_user: dict = Depends(require_role(["admin", "engineer"])),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -203,7 +214,13 @@ async def process_report(
                 "snippet": ev["raw_text_snippet"][:100] + "...",
             })
 
-    await db.flush()
+    log_audit_event(
+        username=current_user.get("username", "anonymous"),
+        role=current_user.get("role", "engineer"),
+        action="REPORT_PROCESS_OCR",
+        entity="REPORT",
+        details=f"OCR & NLP extraction executed for report {report_id} ({len(extracted_events)} events found)",
+    )
 
     return {
         "status": "success",
