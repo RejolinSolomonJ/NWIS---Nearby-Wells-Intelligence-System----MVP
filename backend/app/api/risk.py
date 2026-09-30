@@ -29,18 +29,11 @@ from app.services.risk_engine.engine import compute_deterministic_risk, evaluate
 
 router = APIRouter(prefix="/risk", tags=["Risk & Alerts"])
 
-DATASET_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-    "synthetic_data",
-    "dataset.json",
-)
+from app.core.dataset import load_dataset
 
 
 def _load_dataset():
-    if os.path.exists(DATASET_PATH):
-        with open(DATASET_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return None
+    return load_dataset()
 
 
 @router.get("/current", response_model=CurrentRiskResponse)

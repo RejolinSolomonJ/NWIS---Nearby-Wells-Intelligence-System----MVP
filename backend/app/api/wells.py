@@ -11,6 +11,7 @@ from sqlalchemy import select, func, text
 from geoalchemy2.functions import ST_X, ST_Y, ST_DWithin, ST_Distance, ST_SetSRID, ST_MakePoint, ST_AsText
 
 from app.core.database import get_db
+from app.core.dataset import get_fallback_wells
 from app.models import Well
 from app.schemas import WellCreate, WellResponse, WellNearbyResponse
 
@@ -67,49 +68,82 @@ async def get_nearby_wells(
 
     except Exception:
         # Fallback query using Haversine formula if PostGIS geography functions are unavailable
-        haversine_query = text("""
-            SELECT 
-                well_id,
-                name,
-                status,
-                total_depth_m,
-                ST_Y(geom::geometry) AS latitude,
-                ST_X(geom::geometry) AS longitude,
-                (6371.0 * acos(
-                    cos(radians(:lat)) * cos(radians(ST_Y(geom::geometry))) *
-                    cos(radians(ST_X(geom::geometry)) - radians(:lon)) +
-                    sin(radians(:lat)) * sin(radians(ST_Y(geom::geometry)))
-                )) AS distance_km
-            FROM wells
-            WHERE geom IS NOT NULL
-            GROUP BY well_id, name, status, total_depth_m, geom
-            HAVING (6371.0 * acos(
-                    cos(radians(:lat)) * cos(radians(ST_Y(geom::geometry))) *
-                    cos(radians(ST_X(geom::geometry)) - radians(:lon)) +
-                    sin(radians(:lat)) * sin(radians(ST_Y(geom::geometry)))
-                )) <= :radius_km
-            ORDER BY distance_km ASC;
-        """)
+        try:
+            haversine_query = text("""
+                SELECT 
+                    well_id,
+                    name,
+                    status,
+                    total_depth_m,
+                    ST_Y(geom::geometry) AS latitude,
+                    ST_X(geom::geometry) AS longitude,
+                    (6371.0 * acos(
+                        cos(radians(:lat)) * cos(radians(ST_Y(geom::geometry))) *
+                        cos(radians(ST_X(geom::geometry)) - radians(:lon)) +
+                        sin(radians(:lat)) * sin(radians(ST_Y(geom::geometry)))
+                    )) AS distance_km
+                FROM wells
+                WHERE geom IS NOT NULL
+                GROUP BY well_id, name, status, total_depth_m, geom
+                HAVING (6371.0 * acos(
+                        cos(radians(:lat)) * cos(radians(ST_Y(geom::geometry))) *
+                        cos(radians(ST_X(geom::geometry)) - radians(:lon)) +
+                        sin(radians(:lat)) * sin(radians(ST_Y(geom::geometry)))
+                    )) <= :radius_km
+                ORDER BY distance_km ASC;
+            """)
 
-        result = await db.execute(haversine_query, {
-            "lat": lat,
-            "lon": lon,
-            "radius_km": radius_km
-        })
-        rows = result.mappings().all()
+            result = await db.execute(haversine_query, {
+                "lat": lat,
+                "lon": lon,
+                "radius_km": radius_km
+            })
+            rows = result.mappings().all()
 
-        return [
-            WellNearbyResponse(
-                well_id=r["well_id"],
-                name=r["name"],
-                status=r["status"],
-                total_depth_m=r["total_depth_m"],
-                latitude=round(float(r["latitude"]), 6),
-                longitude=round(float(r["longitude"]), 6),
-                distance_km=round(float(r["distance_km"]), 2)
+            if rows:
+                return [
+                    WellNearbyResponse(
+                        well_id=r["well_id"],
+                        name=r["name"],
+                        status=r["status"],
+                        total_depth_m=r["total_depth_m"],
+                        latitude=round(float(r["latitude"]), 6),
+                        longitude=round(float(r["longitude"]), 6),
+                        distance_km=round(float(r["distance_km"]), 2)
+                    )
+                    for r in rows
+                ]
+        except Exception:
+            pass
+
+    # Pure Python Haversine fallback over synthetic dataset
+    import math, uuid
+    def haversine(lat1, lon1, lat2, lon2):
+        R = 6371.0
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    nearby = []
+    for w in get_fallback_wells():
+        w_lat = float(w.get("latitude", 27.28))
+        w_lon = float(w.get("longitude", 95.34))
+        dist = haversine(lat, lon, w_lat, w_lon)
+        if dist <= radius_km:
+            nearby.append(
+                WellNearbyResponse(
+                    well_id=uuid.UUID(w["well_id"]),
+                    name=w["name"],
+                    status=w.get("status", "active"),
+                    total_depth_m=float(w.get("total_depth_m", 3500.0)),
+                    latitude=round(w_lat, 6),
+                    longitude=round(w_lon, 6),
+                    distance_km=round(dist, 2),
+                )
             )
-            for r in rows
-        ]
+    nearby.sort(key=lambda x: x.distance_km)
+    return nearby
 
 
 @router.get("", response_model=List[WellResponse])
@@ -137,46 +171,40 @@ async def list_wells(
         result = await db.execute(query)
         rows = result.mappings().all()
 
-        return [
-            WellResponse(
-                well_id=r["well_id"],
-                name=r["name"],
-                spud_date=r["spud_date"],
-                total_depth_m=r["total_depth_m"],
-                status=r["status"],
-                latitude=round(float(r["latitude"]), 6) if r["latitude"] is not None else None,
-                longitude=round(float(r["longitude"]), 6) if r["longitude"] is not None else None,
-            )
-            for r in rows
-        ]
-    except Exception:
-        import json, os, uuid
-        dpath = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            "synthetic_data",
-            "dataset.json",
-        )
-        if os.path.exists(dpath):
-            with open(dpath, "r", encoding="utf-8") as f:
-                ds = json.load(f)
-            wells_data = ds.get("wells", [])
-            if status:
-                wells_data = [w for w in wells_data if w.get("status", "").lower() == status.lower()]
-            res = []
-            for w in wells_data[offset : offset + limit]:
-                res.append(
-                    WellResponse(
-                        well_id=uuid.UUID(w["well_id"]),
-                        name=w["name"],
-                        spud_date=w.get("spud_date"),
-                        total_depth_m=w.get("total_depth_m", 3500.0),
-                        status=w.get("status", "active"),
-                        latitude=w.get("latitude", 27.28),
-                        longitude=w.get("longitude", 95.34),
-                    )
+        if rows:
+            return [
+                WellResponse(
+                    well_id=r["well_id"],
+                    name=r["name"],
+                    spud_date=r["spud_date"],
+                    total_depth_m=r["total_depth_m"],
+                    status=r["status"],
+                    latitude=round(float(r["latitude"]), 6) if r["latitude"] is not None else None,
+                    longitude=round(float(r["longitude"]), 6) if r["longitude"] is not None else None,
                 )
-            return res
-        return []
+                for r in rows
+            ]
+    except Exception:
+        pass
+
+    import uuid
+    wells_data = get_fallback_wells()
+    if status:
+        wells_data = [w for w in wells_data if w.get("status", "").lower() == status.lower()]
+    res = []
+    for w in wells_data[offset : offset + limit]:
+        res.append(
+            WellResponse(
+                well_id=uuid.UUID(w["well_id"]),
+                name=w["name"],
+                spud_date=w.get("spud_date"),
+                total_depth_m=float(w.get("total_depth_m", 3500.0)),
+                status=w.get("status", "active"),
+                latitude=float(w.get("latitude", 27.28)),
+                longitude=float(w.get("longitude", 95.34)),
+            )
+        )
+    return res
 
 
 @router.get("/{well_id}", response_model=WellResponse)
@@ -210,27 +238,19 @@ async def get_well(well_id: UUID, db: AsyncSession = Depends(get_db)):
     except HTTPException:
         raise
     except Exception:
-        import json, os, uuid
-        dpath = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            "synthetic_data",
-            "dataset.json",
-        )
-        if os.path.exists(dpath):
-            with open(dpath, "r", encoding="utf-8") as f:
-                ds = json.load(f)
-            wid_str = str(well_id)
-            w = next((x for x in ds.get("wells", []) if x["well_id"] == wid_str), None)
-            if w:
-                return WellResponse(
-                    well_id=uuid.UUID(w["well_id"]),
-                    name=w["name"],
-                    spud_date=w.get("spud_date"),
-                    total_depth_m=w.get("total_depth_m", 3500.0),
-                    status=w.get("status", "active"),
-                    latitude=w.get("latitude", 27.28),
-                    longitude=w.get("longitude", 95.34),
-                )
+        import uuid
+        wid_str = str(well_id)
+        w = next((x for x in get_fallback_wells() if x.get("well_id") == wid_str), None)
+        if w:
+            return WellResponse(
+                well_id=uuid.UUID(w["well_id"]),
+                name=w["name"],
+                spud_date=w.get("spud_date"),
+                total_depth_m=float(w.get("total_depth_m", 3500.0)),
+                status=w.get("status", "active"),
+                latitude=float(w.get("latitude", 27.28)),
+                longitude=float(w.get("longitude", 95.34)),
+            )
         raise HTTPException(status_code=404, detail=f"Well with ID {well_id} not found")
 
 

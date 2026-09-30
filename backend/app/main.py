@@ -12,6 +12,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import engine
+from app.core.init_db import initialize_and_seed_db
 from app.api import wells, formations, events, reports, similarity, risk, copilot, auth
 from app.schemas import HealthResponse, ErrorResponse
 
@@ -56,6 +57,26 @@ async def generic_exception_handler(request: Request, exc: Exception):
             "code": 500,
         },
     )
+
+
+# ─── Startup Event ───
+@app.on_event("startup")
+async def startup_event():
+    """Auto-initialize database extensions, tables, and synthetic seed data."""
+    try:
+        await initialize_and_seed_db()
+    except Exception as e:
+        print(f"[STARTUP DB INIT ERROR]: {e}")
+
+
+@app.get("/init-db", tags=["System"])
+@app.post("/init-db", tags=["System"])
+@app.get("/api/v1/init-db", tags=["System"])
+@app.post("/api/v1/init-db", tags=["System"])
+async def trigger_init_db():
+    """Trigger manual database schema creation and synthetic demo data seeding."""
+    summary = await initialize_and_seed_db()
+    return summary
 
 
 # ─── Health Check ───

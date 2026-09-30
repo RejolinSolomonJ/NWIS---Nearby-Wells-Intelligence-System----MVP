@@ -30,18 +30,11 @@ from app.services.rag_copilot.service import rag_service
 
 router = APIRouter(prefix="/copilot", tags=["Copilot"])
 
-DATASET_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-    "synthetic_data",
-    "dataset.json",
-)
+from app.core.dataset import load_dataset
 
 
 def _load_dataset():
-    if os.path.exists(DATASET_PATH):
-        with open(DATASET_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return None
+    return load_dataset()
 
 
 @router.post("/query", response_model=CopilotQueryResponse)

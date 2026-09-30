@@ -18,18 +18,11 @@ from app.schemas import DrillingEventResponse
 
 router = APIRouter(prefix="/events", tags=["Drilling Events"])
 
-DATASET_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-    "synthetic_data",
-    "dataset.json",
-)
+from app.core.dataset import load_dataset
 
 
 def _load_dataset():
-    if os.path.exists(DATASET_PATH):
-        with open(DATASET_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return None
+    return load_dataset()
 
 
 @router.get("/by-depth", response_model=List[DrillingEventResponse])
@@ -151,12 +144,15 @@ async def search_events(
             resp.formation_name = form_name
             response.append(resp)
 
-        return response
+        if response:
+            return response
     except Exception:
-        # Fallback to synthetic dataset
-        ds = _load_dataset()
-        if not ds:
-            return []
+        pass
+
+    # Fallback to synthetic dataset
+    ds = _load_dataset()
+    if not ds:
+        return []
         events = ds.get("drilling_events", [])
         formations = {f["formation_id"]: f["name"] for f in ds.get("formations", [])}
         filtered = []

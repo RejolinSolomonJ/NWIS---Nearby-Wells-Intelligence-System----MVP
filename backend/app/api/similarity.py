@@ -21,19 +21,12 @@ from app.schemas import WellSimilarityResponse, NearbyVsRelevantResponse
 
 router = APIRouter(tags=["Similarity"])
 
-# Path to precomputed dataset for offline mode
-DATASET_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-    "synthetic_data", "dataset.json"
-)
+from app.core.dataset import load_dataset
 
 
 def _load_dataset():
     """Load synthetic dataset.json for offline pairwise computation."""
-    if os.path.exists(DATASET_PATH):
-        with open(DATASET_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return None
+    return load_dataset()
 
 
 def _get_precomputed_similarities():
