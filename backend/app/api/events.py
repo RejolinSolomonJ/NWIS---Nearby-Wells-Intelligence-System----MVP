@@ -153,49 +153,50 @@ async def search_events(
     ds = _load_dataset()
     if not ds:
         return []
-        events = ds.get("drilling_events", [])
-        formations = {f["formation_id"]: f["name"] for f in ds.get("formations", [])}
-        filtered = []
 
-        wid_str = str(well_id) if well_id else None
+    events = ds.get("drilling_events", [])
+    formations = {f["formation_id"]: f["name"] for f in ds.get("formations", [])}
+    filtered = []
 
-        for e in events:
-            if wid_str and e["well_id"] != wid_str:
-                continue
-            if event_type and e["event_type"].lower() != event_type.lower():
-                continue
-            if severity and severity.lower() not in e.get("severity", "").lower():
-                continue
-            if depth_min is not None and e["depth_m"] < depth_min:
-                continue
-            if depth_max is not None and e["depth_m"] > depth_max:
-                continue
-            fname = formations.get(e.get("formation_id"), "Barail Coal-Shale Formation (F3)")
-            if formation and formation.lower() not in fname.lower():
-                continue
+    wid_str = str(well_id) if well_id else None
 
-            filtered.append(
-                DrillingEventResponse(
-                    event_id=uuid.UUID(e["event_id"]),
-                    well_id=uuid.UUID(e["well_id"]),
-                    formation_id=uuid.UUID(e["formation_id"]) if e.get("formation_id") else None,
-                    event_type=e["event_type"],
-                    severity=e.get("severity", "critical"),
-                    depth_m=e["depth_m"],
-                    description=e["description"],
-                    root_cause=e.get("root_cause"),
-                    action_taken=e.get("action_taken"),
-                    mud_weight_ppg=e.get("mud_weight_ppg", 11.2),
-                    report_id=uuid.UUID(e["report_id"]) if e.get("report_id") else None,
-                    page_number=e.get("page_number", 3),
-                    needs_review=e.get("needs_review", False),
-                    raw_text_snippet=e.get("raw_text_snippet"),
-                    formation_name=fname,
-                )
+    for e in events:
+        if wid_str and e["well_id"] != wid_str:
+            continue
+        if event_type and e["event_type"].lower() != event_type.lower():
+            continue
+        if severity and severity.lower() not in e.get("severity", "").lower():
+            continue
+        if depth_min is not None and e["depth_m"] < depth_min:
+            continue
+        if depth_max is not None and e["depth_m"] > depth_max:
+            continue
+        fname = formations.get(e.get("formation_id"), "Barail Coal-Shale Formation (F3)")
+        if formation and formation.lower() not in fname.lower():
+            continue
+
+        filtered.append(
+            DrillingEventResponse(
+                event_id=uuid.UUID(e["event_id"]),
+                well_id=uuid.UUID(e["well_id"]),
+                formation_id=uuid.UUID(e["formation_id"]) if e.get("formation_id") else None,
+                event_type=e["event_type"],
+                severity=e.get("severity", "critical"),
+                depth_m=e["depth_m"],
+                description=e["description"],
+                root_cause=e.get("root_cause"),
+                action_taken=e.get("action_taken"),
+                mud_weight_ppg=e.get("mud_weight_ppg", 11.2),
+                report_id=uuid.UUID(e["report_id"]) if e.get("report_id") else None,
+                page_number=e.get("page_number", 3),
+                needs_review=e.get("needs_review", False),
+                raw_text_snippet=e.get("raw_text_snippet"),
+                formation_name=fname,
             )
+        )
 
-        filtered.sort(key=lambda x: x.depth_m)
-        return filtered[offset : offset + limit]
+    filtered.sort(key=lambda x: x.depth_m)
+    return filtered[offset : offset + limit]
 
 
 @router.get("/needs-review", response_model=List[DrillingEventResponse])
