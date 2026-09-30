@@ -1,6 +1,6 @@
 """
 NWIS-X Database Auto-Initialization & Seeding Service.
-Executes on application startup to ensure schema, extensions, and demo data exist.
+Executes safely without transaction abortion.
 """
 
 import os
@@ -26,7 +26,7 @@ def _find_file(filename: str) -> str:
 
 
 async def initialize_and_seed_db() -> dict:
-    """Initialize schema, extensions, and seed data if wells table is empty."""
+    """Initialize schema, extensions, and seed data safely."""
     summary = {
         "status": "pending",
         "extensions_enabled": [],
@@ -39,22 +39,26 @@ async def initialize_and_seed_db() -> dict:
     schema_file = _find_file("schema.sql")
     seed_file = _find_file("seed.sql")
 
+    # Step 1: Safe non-failing check if wells table already exists
     try:
-        async with engine.begin() as conn:
-            # Check existing count
-            try:
-                res = await conn.execute(text("SELECT COUNT(*) FROM wells;"))
-                count = res.scalar()
+        async with engine.connect() as conn:
+            check_query = text("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'wells');")
+            res = await conn.execute(check_query)
+            table_exists = res.scalar()
+            if table_exists:
+                res_count = await conn.execute(text("SELECT COUNT(*) FROM wells;"))
+                count = res_count.scalar()
                 if count and count > 0:
                     summary["status"] = "already_initialized"
                     summary["wells_count"] = count
                     logger.info(f"Database already initialized with {count} wells.")
                     return summary
-            except Exception:
-                # Table doesn't exist yet, proceed with setup
-                pass
+    except Exception as e:
+        logger.warning(f"Safe table existence check encountered: {e}")
 
-            # Acquire raw asyncpg connection for multi-statement execution
+    # Step 2: Fresh connection for extensions, DDL and DML
+    try:
+        async with engine.connect() as conn:
             raw_conn = await conn.get_raw_connection()
             driver_conn = getattr(raw_conn, "driver_connection", raw_conn)
 
