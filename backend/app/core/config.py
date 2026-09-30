@@ -4,6 +4,7 @@ Single source of truth for all app settings.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 from typing import Optional
 
 
@@ -18,6 +19,16 @@ class Settings(BaseSettings):
     # --- Database ---
     DATABASE_URL: str = "postgresql+asyncpg://nwis:nwis_secret_change_me@localhost:5432/nwis_x"
     DATABASE_URL_SYNC: str = "postgresql://nwis:nwis_secret_change_me@localhost:5432/nwis_x"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: str) -> str:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     # --- Auth / JWT ---
     SECRET_KEY: str = "change-me-to-a-random-secret-key"
